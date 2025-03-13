@@ -30,35 +30,61 @@
         {
             this.ImportExcel = new System.Windows.Forms.Button();
             this.CheckDB = new System.Windows.Forms.Button();
+            this.Agenda = new System.Windows.Forms.Button();
+            this.PrintAgenda = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // ImportExcel
             // 
-            this.ImportExcel.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ImportExcel.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ImportExcel.Location = new System.Drawing.Point(20, 250);
             this.ImportExcel.Name = "ImportExcel";
             this.ImportExcel.Size = new System.Drawing.Size(150, 75);
             this.ImportExcel.TabIndex = 0;
-            this.ImportExcel.Text = "ไปหน้า Import Excel";
+            this.ImportExcel.Text = "หน้า Import Excel";
             this.ImportExcel.UseVisualStyleBackColor = true;
             this.ImportExcel.Click += new System.EventHandler(this.ImportExcel_Click);
             // 
             // CheckDB
             // 
-            this.CheckDB.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.CheckDB.Location = new System.Drawing.Point(190, 250);
+            this.CheckDB.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.CheckDB.Location = new System.Drawing.Point(200, 250);
             this.CheckDB.Name = "CheckDB";
             this.CheckDB.Size = new System.Drawing.Size(150, 75);
             this.CheckDB.TabIndex = 1;
-            this.CheckDB.Text = "ไปหน้าตรวจสอบข้อมูล";
+            this.CheckDB.Text = "หน้าตรวจสอบข้อมูล";
             this.CheckDB.UseVisualStyleBackColor = true;
             this.CheckDB.Click += new System.EventHandler(this.CheckDB_Click);
+            // 
+            // Agenda
+            // 
+            this.Agenda.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Agenda.Location = new System.Drawing.Point(380, 250);
+            this.Agenda.Name = "Agenda";
+            this.Agenda.Size = new System.Drawing.Size(150, 75);
+            this.Agenda.TabIndex = 2;
+            this.Agenda.Text = "เพิ่มวาระการประชุม";
+            this.Agenda.UseVisualStyleBackColor = true;
+            this.Agenda.Click += new System.EventHandler(this.Agenda_Click);
+            // 
+            // PrintAgenda
+            // 
+            this.PrintAgenda.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PrintAgenda.Location = new System.Drawing.Point(560, 250);
+            this.PrintAgenda.Name = "PrintAgenda";
+            this.PrintAgenda.Size = new System.Drawing.Size(150, 75);
+            this.PrintAgenda.TabIndex = 3;
+            this.PrintAgenda.Text = "ปริ้นวาระการประชุม";
+            this.PrintAgenda.UseVisualStyleBackColor = true;
+            this.PrintAgenda.Click += new System.EventHandler(this.PrintAgenda_Click);
             // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(734, 461);
+            this.Controls.Add(this.PrintAgenda);
+            this.Controls.Add(this.Agenda);
             this.Controls.Add(this.CheckDB);
             this.Controls.Add(this.ImportExcel);
             this.Name = "Main";
@@ -72,6 +98,8 @@
 
         private System.Windows.Forms.Button ImportExcel;
         private System.Windows.Forms.Button CheckDB;
+        private System.Windows.Forms.Button Agenda;
+        private System.Windows.Forms.Button PrintAgenda;
     }
 }
 

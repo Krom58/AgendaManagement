@@ -42,6 +42,7 @@ namespace Work1
                         dataGridView.DataSource = dt;
                     }
                 }
+                dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
             }
             catch (Exception ex)
             {

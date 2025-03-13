@@ -37,10 +37,10 @@
             // 
             // Back
             // 
-            this.Back.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Back.Location = new System.Drawing.Point(1322, 12);
+            this.Back.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Back.Location = new System.Drawing.Point(1347, 12);
             this.Back.Name = "Back";
-            this.Back.Size = new System.Drawing.Size(150, 75);
+            this.Back.Size = new System.Drawing.Size(125, 50);
             this.Back.TabIndex = 1;
             this.Back.Text = "กลับหน้าหลัก";
             this.Back.UseVisualStyleBackColor = true;
@@ -48,7 +48,7 @@
             // 
             // SelectFile
             // 
-            this.SelectFile.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.SelectFile.Font = new System.Drawing.Font("Angsana New", 36F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.SelectFile.Location = new System.Drawing.Point(12, 95);
             this.SelectFile.Name = "SelectFile";
             this.SelectFile.Size = new System.Drawing.Size(725, 100);
@@ -67,7 +67,7 @@
             // 
             // ImportToDatabase
             // 
-            this.ImportToDatabase.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ImportToDatabase.Font = new System.Drawing.Font("Angsana New", 36F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ImportToDatabase.Location = new System.Drawing.Point(747, 95);
             this.ImportToDatabase.Name = "ImportToDatabase";
             this.ImportToDatabase.Size = new System.Drawing.Size(725, 100);
