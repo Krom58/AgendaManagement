@@ -52,17 +52,5 @@ namespace Work1
             // ซ่อน Form1 ไว้เพื่อให้เห็นเฉพาะ Form2
             this.Hide();
         }
-
-        private void PrintAgenda_Click(object sender, EventArgs e)
-        {
-            // สร้างอินสแตนซ์ของ Form2 พร้อมส่ง this (Form1) ไปใน constructor
-            PrintAgenda PrintAgenda = new PrintAgenda(this);
-
-            // แสดง Form2
-            PrintAgenda.Show();
-
-            // ซ่อน Form1 ไว้เพื่อให้เห็นเฉพาะ Form2
-            this.Hide();
-        }
     }
 }

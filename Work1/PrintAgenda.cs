@@ -10,53 +10,24 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 using System.Drawing.Printing;
+using DocumentFormat.OpenXml.Office2010.Excel;
+using System.Drawing.Configuration;
 
 namespace Work1
 {
     public partial class PrintAgenda: Form
     {
         private string connectionString = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
-        public PrintAgenda()
+        private int personId;
+        public PrintAgenda(int Id)
         {
             InitializeComponent();
+            personId = Id;
         }
-
-        private Main _Main;
-
         // Constructor ที่รับ Form1 เข้ามา
         public PrintAgenda(Main main)
         {
             InitializeComponent();
-            _Main = main;
-        }
-
-        private void Back_Click(object sender, EventArgs e)
-        {
-            // เรียกให้ Form1 กลับมาแสดง
-            _Main.Show();
-
-            // ปิด Form2 เพื่อกลับไปใช้งาน Form1
-            this.Close();
-        }
-
-        private void btnLoadTemplate_Click(object sender, EventArgs e)
-        {
-            if (comboBoxPerson.SelectedItem == null)
-            {
-                MessageBox.Show("กรุณาเลือกบุคคลจากรายการ");
-                return;
-            }
-
-            // ดึงข้อมูลจาก ComboBox (ใช้ DataRowView ในกรณีที่ผูก DataSource ด้วย DataTable)
-            DataRowView drv = comboBoxPerson.SelectedItem as DataRowView;
-            if (drv != null)
-            {
-                string personName = drv["n_first"].ToString();
-                string shareCount = drv["q_share"].ToString();
-
-                // เรียก LoadTemplates พร้อมกับส่งค่าพารามิเตอร์
-                LoadTemplates(personName, shareCount);
-            }
         }
         private void PrintDoc_Click(object sender, EventArgs e)
         {
@@ -69,57 +40,111 @@ namespace Work1
         }
         private void PrintDoc_PrintPage(object sender, PrintPageEventArgs e)
         {
-            // วาดข้อความจาก richTextBoxPreview ลงบนเอกสาร A4
-            e.Graphics.DrawString(richTextBoxTemplate.Text, new System.Drawing.Font("Arial", 12), Brushes.Black, new PointF(50, 50));
+            // กำหนดขนาดและตำแหน่งของคอลัมน์
+            float columnWidth = e.MarginBounds.Width / 2;
+            float columnHeight = e.MarginBounds.Height;
+            float leftColumnX = e.MarginBounds.Left;
+            float rightColumnX = e.MarginBounds.Left + columnWidth;
+            float yPosition = e.MarginBounds.Top;
+            float templateHeight = 200; // กำหนดความสูงของแต่ละ template
+            float lineSpacing = 0; // กำหนดระยะห่างระหว่างบรรทัด
+
+            // แบ่งข้อความใน RichTextBox เป็นสองคอลัมน์
+            string[] templates = richTextBoxTemplate.Text.Split(new[] { "-----------------------------------------------------" }, StringSplitOptions.None);
+            List<string> leftColumnTemplates = new List<string>();
+            List<string> rightColumnTemplates = new List<string>();
+
+            for (int i = 0; i < templates.Length; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    leftColumnTemplates.Add(templates[i]);
+                }
+                else
+                {
+                    rightColumnTemplates.Add(templates[i]);
+                }
+            }
+
+            // วาดข้อความในคอลัมน์ซ้าย
+            foreach (string template in leftColumnTemplates)
+            {
+                RectangleF rect = new RectangleF(leftColumnX, yPosition, columnWidth, templateHeight);
+                e.Graphics.DrawRectangle(Pens.Black, rect.X, rect.Y, rect.Width, rect.Height);
+
+                // วัดขนาดของข้อความ
+                SizeF textSize = e.Graphics.MeasureString(template, new System.Drawing.Font("Angsana New", 12));
+                // คำนวณตำแหน่งการวาดเพื่อให้อยู่กึ่งกลาง
+                float textX = rect.X + (rect.Width - textSize.Width) / 2;
+                float textY = rect.Y + (rect.Height - textSize.Height) / 2;
+
+                e.Graphics.DrawString(template, new System.Drawing.Font("Angsana New", 12), Brushes.Black, new PointF(textX, textY));
+                yPosition += templateHeight + lineSpacing; // เพิ่มระยะห่างระหว่าง template
+            }
+
+            // รีเซ็ตตำแหน่ง y สำหรับคอลัมน์ขวา
+            yPosition = e.MarginBounds.Top;
+
+            // วาดข้อความในคอลัมน์ขวา
+            foreach (string template in rightColumnTemplates)
+            {
+                RectangleF rect = new RectangleF(rightColumnX, yPosition, columnWidth, templateHeight);
+                e.Graphics.DrawRectangle(Pens.Black, rect.X, rect.Y, rect.Width, rect.Height);
+
+                // วัดขนาดของข้อความ
+                SizeF textSize = e.Graphics.MeasureString(template, new System.Drawing.Font("Angsana New", 12));
+                // คำนวณตำแหน่งการวาดเพื่อให้อยู่กึ่งกลาง
+                float textX = rect.X + (rect.Width - textSize.Width) / 2;
+                float textY = rect.Y + (rect.Height - textSize.Height) / 2;
+
+                e.Graphics.DrawString(template, new System.Drawing.Font("Angsana New", 12), Brushes.Black, new PointF(textX, textY));
+                yPosition += templateHeight + lineSpacing; // เพิ่มระยะห่างระหว่าง template
+            }
         }
 
         private void PrintAgenda_Load(object sender, EventArgs e)
         {
-            comboBoxPerson.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-            comboBoxPerson.AutoCompleteSource = AutoCompleteSource.CustomSource;
-            LoadPersons();
+            LoadPrintTemplate();
         }
-        private void LoadPersons()
+
+        private void LoadPrintTemplate()
         {
+            // กำหนดตัวแปรสำหรับข้อมูลผู้ลงทะเบียนที่เลือก
+            string fullName = "";
+            string q_share = "";
+
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
-                string query = "SELECT Id, n_first, n_last, q_share FROM PersonData";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+
+                // ดึงข้อมูลจาก PersonData สำหรับ PersonID ที่เลือก
+                string queryPerson = @"
+            SELECT CONCAT(n_first, ' ', n_last) AS FullName, q_share
+            FROM PersonData
+            WHERE Id = @Id";
+                using (SqlCommand cmd = new SqlCommand(queryPerson, conn))
                 {
+                    cmd.Parameters.AddWithValue("@Id", personId);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        DataTable dt = new DataTable();
-                        dt.Load(reader);
-                        dt.Columns.Add("FullName", typeof(string), "n_first + ' ' + n_last");
-
-                        comboBoxPerson.DataSource = dt;
-                        comboBoxPerson.DisplayMember = "FullName";
-                        comboBoxPerson.ValueMember = "Id";
-
-                        // สร้าง AutoCompleteSource
-                        AutoCompleteStringCollection autoCompleteCollection = new AutoCompleteStringCollection();
-                        foreach (DataRow row in dt.Rows)
+                        if (reader.Read())
                         {
-                            autoCompleteCollection.Add(row["FullName"].ToString());
+                            fullName = reader["FullName"].ToString();
+                            q_share = reader["q_share"].ToString();
                         }
-                        comboBoxPerson.AutoCompleteCustomSource = autoCompleteCollection;
                     }
                 }
-            }
-        }
-        private void LoadTemplates(string personName, string shareCount)
-        {
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                // ดึงข้อมูลที่ต้องการ (ไม่รวม FixedContent หากต้องการปรับแต่งเพิ่มเติม)
-                string query = "SELECT MeetingNumber, AgendaNumber, AgendaTitle, FixedContent FROM HeaderTemplate ORDER BY HeaderID";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+
+                // ดึงข้อมูล Template จาก HeaderTemplate ทั้งหมด
+                string queryTemplate = @"
+            SELECT MeetingNumber, AgendaNumber, AgendaTitle, FixedContent
+            FROM HeaderTemplate
+            ORDER BY HeaderID";
+                using (SqlCommand cmd = new SqlCommand(queryTemplate, conn))
                 {
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        string documentTemplate = "";
+                        StringBuilder documentTemplate = new StringBuilder();
                         while (reader.Read())
                         {
                             string meetingNumber = reader["MeetingNumber"].ToString();
@@ -127,28 +152,31 @@ namespace Work1
                             string agendaTitle = reader["AgendaTitle"].ToString();
                             string fixedContent = reader["FixedContent"].ToString();
 
-                            // แทนที่ Placeholder {n_first} และ {q_share} ใน FixedContent
-                            fixedContent = fixedContent.Replace("{n_first}", personName).Replace("{q_share}", shareCount);
-
-                            documentTemplate += $@"
-บัตรลงคะแนนการประชุมสามัญผู้ถือหุ้น ครั้งที่ {meetingNumber}
-
-วาระที่ {agendaNumber}    {agendaTitle}
-
-{fixedContent}
------------------------------------------------------
-";
+                            // ประกอบ Block Template สำหรับแต่ละแถวใน HeaderTemplate
+                            documentTemplate.AppendLine($"บัตรลงคะแนนการประชุมสามัญผู้ถือหุ้น ครั้งที่ {meetingNumber}");
+                            documentTemplate.AppendLine($"วาระที่ {agendaNumber}    {agendaTitle}");
+                            documentTemplate.AppendLine($"ชื่อ: {fullName}");
+                            documentTemplate.AppendLine($"จำนวนหุ้น: {q_share}");
+                            documentTemplate.AppendLine("   [  ]เห็นด้วย           [  ]ไม่เห็นด้วย         [  ]งดออกเสียง");
+                            documentTemplate.AppendLine("     (Approved)         (Disapproved)     (Abstained)");
+                            documentTemplate.AppendLine(" ลงชื่อ __________________ ผู้ถือหุ้น");
+                            documentTemplate.Append("-----------------------------------------------------");
                         }
-                        richTextBoxTemplate.Text = documentTemplate;
+                        richTextBoxTemplate.Text = documentTemplate.ToString().Trim();
                     }
                 }
             }
         }
 
 
+
+
+
         private void comboBoxPerson_TextChanged(object sender, EventArgs e)
         {
             
         }
+
+        
     }
 }

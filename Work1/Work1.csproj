@@ -232,6 +232,12 @@
     <Compile Include="CheckDB.Designer.cs">
       <DependentUpon>CheckDB.cs</DependentUpon>
     </Compile>
+    <Compile Include="FormRegistrationChoice.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormRegistrationChoice.Designer.cs">
+      <DependentUpon>FormRegistrationChoice.cs</DependentUpon>
+    </Compile>
     <Compile Include="ImportExcel.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -257,6 +263,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="CheckDB.resx">
       <DependentUpon>CheckDB.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormRegistrationChoice.resx">
+      <DependentUpon>FormRegistrationChoice.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ImportExcel.resx">
       <DependentUpon>ImportExcel.cs</DependentUpon>
