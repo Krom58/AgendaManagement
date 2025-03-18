@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
+using Microsoft.VisualBasic;
 
 namespace Work1
 {
@@ -45,7 +46,7 @@ namespace Work1
         {
             string n_first = textBox1.Text.Trim();
             string n_last = textBox2.Text.Trim();
-            string i_tax = textBox3.Text.Trim();
+            string i_ref = textBox3.Text.Trim();
 
             try
             {
@@ -63,7 +64,7 @@ namespace Work1
                     {
                         queryBuilder.Append(" AND n_last LIKE @n_last");
                     }
-                    if (!string.IsNullOrEmpty(i_tax))
+                    if (!string.IsNullOrEmpty(i_ref))
                     {
                         queryBuilder.Append(" AND i_tax LIKE @i_tax");
                     }
@@ -78,15 +79,31 @@ namespace Work1
                         {
                             cmd.Parameters.AddWithValue("@n_last", "%" + n_last + "%");
                         }
-                        if (!string.IsNullOrEmpty(i_tax))
+                        if (!string.IsNullOrEmpty(i_ref))
                         {
-                            cmd.Parameters.AddWithValue("@i_tax", "%" + i_tax + "%");
+                            cmd.Parameters.AddWithValue("@i_tax", "%" + i_ref + "%");
                         }
 
                         SqlDataAdapter adapter = new SqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         adapter.Fill(dt);
                         dataGridView.DataSource = dt;
+                        dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
+                        dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
+                        dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
+                        dataGridView.Columns["q_share"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                        dataGridView.Columns["i_ref"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        dataGridView.Columns["SelfCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        dataGridView.Columns["ProxyCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                        // ซ่อนคอลัมน์ Id
+                        dataGridView.Columns["Id"].Visible = false;
+                        dataGridView.Columns["RegStatus"].Visible = false;
+                        foreach (DataGridViewColumn col in dataGridView.Columns)
+                        {
+                            col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        }
+
                     }
                 }
             }
@@ -111,7 +128,7 @@ namespace Work1
             // ตรวจสอบว่ามีสถานะ "ลงทะเบียนแล้ว" หรือไม่
             if (currentRegStatus == "ลงทะเบียนแล้ว")
             {
-                MessageBox.Show("แถวนี้ถูกลงทะเบียนแล้ว ไม่สามารถลงทะเบียนซ้ำได้");
+                MessageBox.Show("ชื่อนี้ลงทะเบียนแล้ว ไม่สามารถลงทะเบียนซ้ำได้");
                 return;
             }
 
@@ -119,29 +136,41 @@ namespace Work1
             FormRegistrationChoice choiceForm = new FormRegistrationChoice();
             if (choiceForm.ShowDialog() == DialogResult.OK)
             {
-                string attendChoice = choiceForm.SelectedChoice;  // "มาเอง" หรือ "ตัวแทน"
-
-                // อัปเดทข้อมูลในฐานข้อมูล โดยอัปเดทคอลัมน์ RegStatus และ AttendType
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                string attendChoice = choiceForm.SelectedChoice;  // "มาเอง" หรือ "มอบฉันทะ"
+                MultiInputForm multiInputForm = new MultiInputForm();
+                if (multiInputForm.ShowDialog() == DialogResult.OK)
                 {
-                    conn.Open();
-                    string updateQuery = @"
-        UPDATE PersonData
-        SET RegStatus = N'ลงทะเบียนแล้ว', AttendType = @AttendType
-        WHERE Id = @Id";
-                    using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                    string peopleCountInput = multiInputForm.PeopleCountInput;
+                    string noteInput = multiInputForm.NoteInput;
+                    // อัปเดทข้อมูลในตาราง PersonData โดยเซ็ตค่าในคอลัมน์ที่เกี่ยวข้องเป็น 1
+                    using (SqlConnection conn = new SqlConnection(connectionString))
                     {
-                        cmd.Parameters.AddWithValue("@AttendType", attendChoice);
-                        cmd.Parameters.AddWithValue("@Id", Id);
-                        cmd.ExecuteNonQuery();
+                        conn.Open();
+                        string updateQuery = @"
+                    UPDATE PersonData
+                    SET RegStatus = N'ลงทะเบียนแล้ว',
+                        SelfCount = CASE WHEN @AttendType = N'มาเอง' THEN 1 ELSE SelfCount END,
+                        Proxycount = CASE WHEN @AttendType = N'มอบฉันทะ' THEN 1 ELSE Proxycount END,
+                        Note = @Note
+                    WHERE Id = @Id";
+                        using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@AttendType", attendChoice);
+                            cmd.Parameters.AddWithValue("@Note", noteInput);
+                            cmd.Parameters.AddWithValue("@Id", Id);
+                            cmd.ExecuteNonQuery();
+                        }
                     }
-                }
-                MessageBox.Show("ลงทะเบียนเรียบร้อยแล้ว");
-                LoadData(); // รีเฟรช DataGridView เพื่อแสดงข้อมูลล่าสุด
+                    MessageBox.Show("ลงทะเบียนเรียบร้อยแล้ว");
+                    LoadData(); // รีเฟรช DataGridView
 
-                // หลังจากลงทะเบียนแล้ว ให้เข้าสู่หน้าปริ้น
-                PrintAgenda printForm = new PrintAgenda(Id);
-                printForm.Show();
+                    // ดำเนินการแทรกข้อมูลลงในตารางลงทะเบียนเพิ่มเติม (ถ้ามี)
+                    InsertRegistrationRecord(Id, attendChoice, noteInput, peopleCountInput);
+
+                    // หลังจากลงทะเบียนแล้ว ให้เข้าสู่หน้าปริ้น
+                    PrintAgenda printForm = new PrintAgenda(Id, attendChoice);
+                    printForm.Show();
+                }
             }
         }
         private void LoadData()
@@ -155,7 +184,105 @@ namespace Work1
                     DataTable dt = new DataTable();
                     adapter.Fill(dt);
                     dataGridView.DataSource = dt;
+
+                    dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
+                    dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
+                    dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
+                    dataGridView.Columns["q_share"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                    dataGridView.Columns["i_ref"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dataGridView.Columns["SelfCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dataGridView.Columns["ProxyCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                    // ซ่อนคอลัมน์ Id
+                    dataGridView.Columns["Id"].Visible = false;
+                    dataGridView.Columns["RegStatus"].Visible = false;
+                    foreach (DataGridViewColumn col in dataGridView.Columns)
+                    {
+                        col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    }
                 }
+            }
+        }
+        private void InsertRegistrationRecord(int Id, string attendChoice, string noteInput, string peopleCountInput)
+        {
+            // ดึงข้อมูลของบุคคลจาก PersonData (FullName และ q_share)
+            string fullName = "";
+            string shareCount = "";
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                string queryPerson = "SELECT CONCAT(n_first, ' ', n_last) AS FullName, q_share, Note, Id FROM PersonData WHERE Id = @Id";
+                using (SqlCommand cmd = new SqlCommand(queryPerson, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", Id);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            fullName = reader["FullName"].ToString();
+                            shareCount = reader["q_share"].ToString();
+                            noteInput = reader["Note"].ToString();
+                        }
+                    }
+                }
+
+                // กำหนดค่า PeopleCount เป็น 1 สำหรับทั้งสองกรณี
+                int peopleCount;
+                if (!int.TryParse(peopleCountInput, out peopleCount))
+                {
+                    peopleCount = 1; // กรณีไม่สามารถแปลงได้ ให้ฟิกเป็น 1
+                }
+
+                if (attendChoice == "มาเอง")
+                {
+                    // สร้าง Identifier สำหรับตาราง SelfRegistration (รูปแบบ A1, A2, ...)
+                    string identifier = GetNextIdentifier(conn, "SelfRegistration", "B");
+
+                    string insertQuery = @"
+                INSERT INTO SelfRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
+                VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
+                    using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Identifier", identifier);
+                        cmd.Parameters.AddWithValue("@PeopleCount", peopleCount);
+                        cmd.Parameters.AddWithValue("@FullName", fullName);
+                        cmd.Parameters.AddWithValue("@ShareCount", shareCount);
+                        cmd.Parameters.AddWithValue("@Note", noteInput);
+                        cmd.Parameters.AddWithValue("@Id", Id);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                else if (attendChoice == "มอบฉันทะ")
+                {
+                    // สร้าง Identifier สำหรับตาราง ProxyRegistration (รูปแบบ B1, B2, ...)
+                    string identifier = GetNextIdentifier(conn, "ProxyRegistration", "P");
+
+                    string insertQuery = @"
+                INSERT INTO ProxyRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
+                VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
+                    using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Identifier", identifier);
+                        cmd.Parameters.AddWithValue("@PeopleCount", peopleCount);
+                        cmd.Parameters.AddWithValue("@FullName", fullName);
+                        cmd.Parameters.AddWithValue("@ShareCount", shareCount);
+                        cmd.Parameters.AddWithValue("@Note", noteInput);
+                        cmd.Parameters.AddWithValue("@Id", Id);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+        }
+        private string GetNextIdentifier(SqlConnection conn, string tableName, string prefix)
+        {
+            // Query นับจำนวนแถวในตารางที่ระบุ
+            string query = $"SELECT COUNT(*) FROM {tableName}";
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                int count = (int)cmd.ExecuteScalar();
+                // Identifier คือ prefix + (count+1)
+                return prefix + (count + 1).ToString();
             }
         }
     }

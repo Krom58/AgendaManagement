@@ -27,7 +27,7 @@ namespace Work1
 
         private void btnProxy_Click(object sender, EventArgs e)
         {
-            SelectedChoice = "ตัวแทน";
+            SelectedChoice = "มอบฉันทะ";
             this.DialogResult = DialogResult.OK;
             this.Close();
         }

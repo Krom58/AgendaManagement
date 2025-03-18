@@ -50,7 +50,7 @@
             this.btnProxy.Name = "btnProxy";
             this.btnProxy.Size = new System.Drawing.Size(125, 50);
             this.btnProxy.TabIndex = 3;
-            this.btnProxy.Text = "ตัวแทน";
+            this.btnProxy.Text = "มอบฉันทะ";
             this.btnProxy.UseVisualStyleBackColor = true;
             this.btnProxy.Click += new System.EventHandler(this.btnProxy_Click);
             // 
@@ -63,7 +63,7 @@
             this.Controls.Add(this.btnSelf);
             this.Name = "FormRegistrationChoice";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "FormRegistrationChoice";
+            this.Text = "เลือก มาเอง หรือ มอบฉันทะ";
             this.ResumeLayout(false);
 
         }

@@ -45,13 +45,6 @@ namespace Work1
             string meetingNumber = txtMeetingNumber.Text.Trim();
             string agendaNumber = txtAgendaNumber.Text.Trim();
             string agendaTitle = txtAgendaTitle.Text.Trim();
-
-            // ตัวอย่างการสร้าง FixedContent แบบคงที่ (ส่วนนี้เว้นไว้ให้ผู้พิมพ์แก้ไขได้เองเวลาปริ้น)
-            string fixedContent = @"
-    []เห็นด้วย        []ไม่เห็นด้วย      []งดออกเสียง
-      (Approved)     (Disapproved)  (Abstained)
-ลงชื่อ __________________ ผู้ถือหุ้น";
-
             // ตรวจสอบข้อมูล
             if (string.IsNullOrEmpty(meetingNumber))
             {
@@ -93,8 +86,6 @@ namespace Work1
                         cmd.Parameters.AddWithValue("@MeetingNumber", meetingNumber);
                         cmd.Parameters.AddWithValue("@AgendaNumber", agendaNumber);
                         cmd.Parameters.AddWithValue("@AgendaTitle", agendaTitle);
-                        cmd.Parameters.AddWithValue("@FixedContent", fixedContent);
-
                         cmd.ExecuteNonQuery();
                     }
                 }

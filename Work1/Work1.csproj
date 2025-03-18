@@ -128,6 +128,7 @@
     <Reference Include="Microsoft.IO.RecyclableMemoryStream, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.IO.RecyclableMemoryStream.3.0.1\lib\netstandard2.0\Microsoft.IO.RecyclableMemoryStream.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="PresentationCore" />
     <Reference Include="RBush, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\RBush.4.0.0\lib\net47\RBush.dll</HintPath>
@@ -250,6 +251,12 @@
     <Compile Include="Main.Designer.cs">
       <DependentUpon>Main.cs</DependentUpon>
     </Compile>
+    <Compile Include="MultiInputForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MultiInputForm.Designer.cs">
+      <DependentUpon>MultiInputForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="PrintAgenda.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -258,6 +265,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RegistrationViewer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RegistrationViewer.Designer.cs">
+      <DependentUpon>RegistrationViewer.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Agenda.resx">
       <DependentUpon>Agenda.cs</DependentUpon>
     </EmbeddedResource>
@@ -273,6 +286,9 @@
     <EmbeddedResource Include="Main.resx">
       <DependentUpon>Main.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="MultiInputForm.resx">
+      <DependentUpon>MultiInputForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="PrintAgenda.resx">
       <DependentUpon>PrintAgenda.cs</DependentUpon>
     </EmbeddedResource>
@@ -285,6 +301,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="RegistrationViewer.resx">
+      <DependentUpon>RegistrationViewer.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

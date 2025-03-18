@@ -31,6 +31,7 @@
             this.ImportExcel = new System.Windows.Forms.Button();
             this.CheckDB = new System.Windows.Forms.Button();
             this.Agenda = new System.Windows.Forms.Button();
+            this.RegistrationViewer = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // ImportExcel
@@ -40,18 +41,18 @@
             this.ImportExcel.Name = "ImportExcel";
             this.ImportExcel.Size = new System.Drawing.Size(150, 75);
             this.ImportExcel.TabIndex = 0;
-            this.ImportExcel.Text = "หน้า Import Excel";
+            this.ImportExcel.Text = "Import Excel";
             this.ImportExcel.UseVisualStyleBackColor = true;
             this.ImportExcel.Click += new System.EventHandler(this.ImportExcel_Click);
             // 
             // CheckDB
             // 
             this.CheckDB.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.CheckDB.Location = new System.Drawing.Point(296, 250);
+            this.CheckDB.Location = new System.Drawing.Point(204, 250);
             this.CheckDB.Name = "CheckDB";
             this.CheckDB.Size = new System.Drawing.Size(150, 75);
             this.CheckDB.TabIndex = 1;
-            this.CheckDB.Text = "หน้าลงทะเบียน";
+            this.CheckDB.Text = "ลงทะเบียน";
             this.CheckDB.UseVisualStyleBackColor = true;
             this.CheckDB.Click += new System.EventHandler(this.CheckDB_Click);
             // 
@@ -66,11 +67,23 @@
             this.Agenda.UseVisualStyleBackColor = true;
             this.Agenda.Click += new System.EventHandler(this.Agenda_Click);
             // 
+            // RegistrationViewer
+            // 
+            this.RegistrationViewer.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.RegistrationViewer.Location = new System.Drawing.Point(393, 250);
+            this.RegistrationViewer.Name = "RegistrationViewer";
+            this.RegistrationViewer.Size = new System.Drawing.Size(150, 75);
+            this.RegistrationViewer.TabIndex = 3;
+            this.RegistrationViewer.Text = "ตรวจสอบผู้ลงทะเบียน";
+            this.RegistrationViewer.UseVisualStyleBackColor = true;
+            this.RegistrationViewer.Click += new System.EventHandler(this.RegistrationViewer_Click);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(734, 461);
+            this.Controls.Add(this.RegistrationViewer);
             this.Controls.Add(this.Agenda);
             this.Controls.Add(this.CheckDB);
             this.Controls.Add(this.ImportExcel);
@@ -86,6 +99,7 @@
         private System.Windows.Forms.Button ImportExcel;
         private System.Windows.Forms.Button CheckDB;
         private System.Windows.Forms.Button Agenda;
+        private System.Windows.Forms.Button RegistrationViewer;
     }
 }
 

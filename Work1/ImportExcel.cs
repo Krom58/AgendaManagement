@@ -115,25 +115,25 @@ namespace Work1
                         string n_title = row.Cells["n_title"].Value?.ToString();
                         string n_first = row.Cells["n_first"].Value?.ToString();
                         string n_last = row.Cells["n_last"].Value?.ToString();
-                        string i_tax = row.Cells["i_tax"].Value?.ToString();
                         string q_share = row.Cells["q_share"].Value?.ToString();
+                        string i_ref = row.Cells["i_ref"].Value?.ToString();
 
                         // ถ้า i_tax หรือ q_share เป็นค่าว่าง ให้กำหนดเป็นค่าว่าง
                         n_title = string.IsNullOrEmpty(n_title) ? string.Empty : n_title;
                         n_first = string.IsNullOrEmpty(n_first) ? string.Empty : n_first;
                         n_last = string.IsNullOrEmpty(n_last) ? string.Empty : n_last;
-                        i_tax = string.IsNullOrEmpty(i_tax) ? string.Empty : i_tax;
                         q_share = string.IsNullOrEmpty(q_share) ? string.Empty : q_share;
+                        i_ref = string.IsNullOrEmpty(i_ref) ? string.Empty : i_ref;
 
                         // สร้างคำสั่ง SQL สำหรับแทรกข้อมูล
-                        string query = "INSERT INTO PersonData (n_title, n_first, n_last, i_tax, q_share) VALUES (@n_title, @n_first, @n_last, @i_tax, @q_share)";
+                        string query = "INSERT INTO PersonData (n_title, n_first, n_last, q_share, i_ref) VALUES (@n_title, @n_first, @n_last, @q_share, @i_ref)";
                         using (SqlCommand cmd = new SqlCommand(query, conn))
                         {
                             cmd.Parameters.AddWithValue("@n_title", n_title);
                             cmd.Parameters.AddWithValue("@n_first", n_first);
                             cmd.Parameters.AddWithValue("@n_last", n_last);
-                            cmd.Parameters.AddWithValue("@i_tax", i_tax);
                             cmd.Parameters.AddWithValue("@q_share", q_share);
+                            cmd.Parameters.AddWithValue("@i_ref", i_ref);
                             cmd.ExecuteNonQuery();
                         }
                     }

@@ -52,5 +52,17 @@ namespace Work1
             // ซ่อน Form1 ไว้เพื่อให้เห็นเฉพาะ Form2
             this.Hide();
         }
+
+        private void RegistrationViewer_Click(object sender, EventArgs e)
+        {
+            // สร้างอินสแตนซ์ของ Form2 พร้อมส่ง this (Form1) ไปใน constructor
+            RegistrationViewer RegistrationViewer = new RegistrationViewer(this);
+
+            // แสดง Form2
+            RegistrationViewer.Show();
+
+            // ซ่อน Form1 ไว้เพื่อให้เห็นเฉพาะ Form2
+            this.Hide();
+        }
     }
 }

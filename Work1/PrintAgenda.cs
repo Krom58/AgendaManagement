@@ -19,10 +19,12 @@ namespace Work1
     {
         private string connectionString = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
         private int personId;
-        public PrintAgenda(int Id)
+        private string attendChoice; // เก็บ attendChoice จากฟอร์มอื่น
+        public PrintAgenda(int Id, string attendChoice)
         {
             InitializeComponent();
-            personId = Id;
+            this.personId = Id;
+            this.attendChoice = attendChoice; // assign ค่าที่ส่งมาจากฟอร์มอื่น
         }
         // Constructor ที่รับ Form1 เข้ามา
         public PrintAgenda(Main main)
@@ -109,19 +111,19 @@ namespace Work1
 
         private void LoadPrintTemplate()
         {
-            // กำหนดตัวแปรสำหรับข้อมูลผู้ลงทะเบียนที่เลือก
             string fullName = "";
             string q_share = "";
+            string identifier = "";
 
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
 
-                // ดึงข้อมูลจาก PersonData สำหรับ PersonID ที่เลือก
+                // ดึงข้อมูลจาก PersonData สำหรับ personId
                 string queryPerson = @"
-            SELECT CONCAT(n_first, ' ', n_last) AS FullName, q_share
-            FROM PersonData
-            WHERE Id = @Id";
+                SELECT CONCAT(n_first, ' ', n_last) AS FullName, q_share
+                FROM PersonData
+                WHERE Id = @Id";
                 using (SqlCommand cmd = new SqlCommand(queryPerson, conn))
                 {
                     cmd.Parameters.AddWithValue("@Id", personId);
@@ -135,11 +137,38 @@ namespace Work1
                     }
                 }
 
-                // ดึงข้อมูล Template จาก HeaderTemplate ทั้งหมด
+                // ใช้ attendChoice ที่ส่งมาจากหน้าลงทะเบียน (printAgenda รับ attendChoice แล้วเก็บในตัวแปร attendChoice)
+                if (attendChoice == "มาเอง")
+                {
+                    // ดึง Identifier จากตาราง SelfRegistration สำหรับ personId
+                    // (สมมุติว่าตาราง SelfRegistration มีคอลัมน์ PersonID ด้วย)
+                    string queryReg = "SELECT Identifier FROM SelfRegistration WHERE Id = @Id";
+                    using (SqlCommand cmd = new SqlCommand(queryReg, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", personId);
+                        object result = cmd.ExecuteScalar();
+                        if (result != null)
+                            identifier = result.ToString();
+                    }
+                }
+                else if (attendChoice == "มอบฉันทะ")
+                {
+                    // ดึง Identifier จากตาราง ProxyRegistration สำหรับ personId
+                    string queryReg = "SELECT Identifier FROM ProxyRegistration WHERE Id = @Id";
+                    using (SqlCommand cmd = new SqlCommand(queryReg, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", personId);
+                        object result = cmd.ExecuteScalar();
+                        if (result != null)
+                            identifier = result.ToString();
+                    }
+                }
+
+                // ดึงข้อมูล Template จากตาราง HeaderTemplate ทั้งหมด
                 string queryTemplate = @"
-            SELECT MeetingNumber, AgendaNumber, AgendaTitle, FixedContent
-            FROM HeaderTemplate
-            ORDER BY HeaderID";
+                SELECT MeetingNumber, AgendaNumber, AgendaTitle, FixedContent
+                FROM HeaderTemplate
+                ORDER BY HeaderID";
                 using (SqlCommand cmd = new SqlCommand(queryTemplate, conn))
                 {
                     using (SqlDataReader reader = cmd.ExecuteReader())
@@ -153,13 +182,13 @@ namespace Work1
                             string fixedContent = reader["FixedContent"].ToString();
 
                             // ประกอบ Block Template สำหรับแต่ละแถวใน HeaderTemplate
-                            documentTemplate.AppendLine($"บัตรลงคะแนนการประชุมสามัญผู้ถือหุ้น ครั้งที่ {meetingNumber}");
+                            documentTemplate.AppendLine($"บัตรลงคะแนนการประชุมสามัญผู้ถือหุ้น ครั้งที่ {meetingNumber}              {identifier}");
                             documentTemplate.AppendLine($"วาระที่ {agendaNumber}    {agendaTitle}");
                             documentTemplate.AppendLine($"ชื่อ: {fullName}");
                             documentTemplate.AppendLine($"จำนวนหุ้น: {q_share}");
-                            documentTemplate.AppendLine("   [  ]เห็นด้วย           [  ]ไม่เห็นด้วย         [  ]งดออกเสียง");
+                            documentTemplate.AppendLine("   [  ] เห็นด้วย           [  ] ไม่เห็นด้วย         [  ] งดออกเสียง");
                             documentTemplate.AppendLine("     (Approved)         (Disapproved)     (Abstained)");
-                            documentTemplate.AppendLine(" ลงชื่อ __________________ ผู้ถือหุ้น");
+                            documentTemplate.AppendLine("ลงชื่อ __________________ ผู้ถือหุ้น");
                             documentTemplate.Append("-----------------------------------------------------");
                         }
                         richTextBoxTemplate.Text = documentTemplate.ToString().Trim();
