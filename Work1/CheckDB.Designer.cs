@@ -38,6 +38,7 @@
             this.SearchButton = new System.Windows.Forms.Button();
             this.btnRegister = new System.Windows.Forms.Button();
             this.dataGridView = new System.Windows.Forms.DataGridView();
+            this.Reprint = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
             this.SuspendLayout();
             // 
@@ -136,11 +137,23 @@
             this.dataGridView.Size = new System.Drawing.Size(1482, 509);
             this.dataGridView.TabIndex = 14;
             // 
+            // Reprint
+            // 
+            this.Reprint.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Reprint.Location = new System.Drawing.Point(1147, 145);
+            this.Reprint.Name = "Reprint";
+            this.Reprint.Size = new System.Drawing.Size(150, 50);
+            this.Reprint.TabIndex = 15;
+            this.Reprint.Text = "ปริ้นใหม่";
+            this.Reprint.UseVisualStyleBackColor = true;
+            this.Reprint.Click += new System.EventHandler(this.Reprint_Click);
+            // 
             // CheckDB
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1484, 711);
+            this.Controls.Add(this.Reprint);
             this.Controls.Add(this.dataGridView);
             this.Controls.Add(this.btnRegister);
             this.Controls.Add(this.SearchButton);
@@ -173,5 +186,6 @@
         private System.Windows.Forms.Button SearchButton;
         private System.Windows.Forms.Button btnRegister;
         private System.Windows.Forms.DataGridView dataGridView;
+        private System.Windows.Forms.Button Reprint;
     }
 }

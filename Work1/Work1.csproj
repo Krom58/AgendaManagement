@@ -233,6 +233,7 @@
     <Compile Include="CheckDB.Designer.cs">
       <DependentUpon>CheckDB.cs</DependentUpon>
     </Compile>
+    <Compile Include="DBConfig.cs" />
     <Compile Include="FormRegistrationChoice.cs">
       <SubType>Form</SubType>
     </Compile>

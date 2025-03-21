@@ -14,7 +14,6 @@ namespace Work1
 {
     public partial class Agenda: Form
     {
-        private string connectionString = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
         public Agenda()
         {
             InitializeComponent();
@@ -68,15 +67,10 @@ namespace Work1
                 MessageBox.Show("วาระที่นี้มีอยู่แล้ว กรุณาใช้หมายเลขอื่น");
                 return;
             }
-            if (GetTotalAgendaCount() >= 9)
-            {
-                MessageBox.Show("สามารถบันทึกได้สูงสุด 9 วาระแล้ว");
-                return;
-            }
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
                     conn.Open();
                     string query = @"INSERT INTO HeaderTemplate (MeetingNumber, AgendaNumber, AgendaTitle, FixedContent)
@@ -106,7 +100,7 @@ namespace Work1
         private bool IsAgendaNumberDuplicate(string agendaNumber)
         {
             bool duplicate = false;
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
                 string query = "SELECT COUNT(*) FROM HeaderTemplate WHERE AgendaNumber = @AgendaNumber";
@@ -127,7 +121,7 @@ namespace Work1
         private int GetTotalAgendaCount()
         {
             int total = 0;
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
                 string query = "SELECT COUNT(*) FROM HeaderTemplate";
@@ -145,11 +139,9 @@ namespace Work1
         }
         private void LoadDataFromDatabase()
         {
-            string connectionString = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
-
             try
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
                     conn.Open();
 
@@ -160,9 +152,19 @@ namespace Work1
                         DataTable dt = new DataTable();
                         adapter.Fill(dt);
                         dataGridViewTemplate.DataSource = dt;
+                        dataGridViewTemplate.Columns["MeetingNumber"].HeaderText = "ครั้งที่";
+                        dataGridViewTemplate.Columns["AgendaNumber"].HeaderText = "วาระที่";
+                        dataGridViewTemplate.Columns["AgendaTitle"].HeaderText = "หัวข้อ";
+                        dataGridViewTemplate.Columns["HeaderId"].Visible = false;
+                        dataGridViewTemplate.Columns["MeetingNumber"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        dataGridViewTemplate.Columns["AgendaNumber"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        dataGridViewTemplate.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
                     }
                 }
-                dataGridViewTemplate.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                foreach (DataGridViewColumn col in dataGridViewTemplate.Columns)
+                {
+                    col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                }
             }
             catch (Exception ex)
             {
@@ -192,7 +194,7 @@ namespace Work1
         }
         private void DeleteRecord(int headerID)
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
                 string query = "DELETE FROM HeaderTemplate WHERE HeaderID = @HeaderID";

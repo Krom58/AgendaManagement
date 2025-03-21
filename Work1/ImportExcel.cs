@@ -91,12 +91,9 @@ namespace Work1
                 return;
             }
 
-            // ใช้ Connection String ที่กำหนดไว้
-            string connectionString = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
-
             try
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
                     conn.Open();
 

@@ -14,7 +14,6 @@ namespace Work1
 {
     public partial class CheckDB: Form
     {
-        private string connectionString = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
         public CheckDB()
         {
             InitializeComponent();
@@ -50,7 +49,7 @@ namespace Work1
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
                     conn.Open();
 
@@ -66,7 +65,7 @@ namespace Work1
                     }
                     if (!string.IsNullOrEmpty(i_ref))
                     {
-                        queryBuilder.Append(" AND i_tax LIKE @i_tax");
+                        queryBuilder.Append(" AND i_ref LIKE @i_ref");
                     }
 
                     using (SqlCommand cmd = new SqlCommand(queryBuilder.ToString(), conn))
@@ -81,7 +80,7 @@ namespace Work1
                         }
                         if (!string.IsNullOrEmpty(i_ref))
                         {
-                            cmd.Parameters.AddWithValue("@i_tax", "%" + i_ref + "%");
+                            cmd.Parameters.AddWithValue("@i_ref", "%" + i_ref + "%");
                         }
 
                         SqlDataAdapter adapter = new SqlDataAdapter(cmd);
@@ -143,7 +142,7 @@ namespace Work1
                     string peopleCountInput = multiInputForm.PeopleCountInput;
                     string noteInput = multiInputForm.NoteInput;
                     // อัปเดทข้อมูลในตาราง PersonData โดยเซ็ตค่าในคอลัมน์ที่เกี่ยวข้องเป็น 1
-                    using (SqlConnection conn = new SqlConnection(connectionString))
+                    using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                     {
                         conn.Open();
                         string updateQuery = @"
@@ -175,7 +174,7 @@ namespace Work1
         }
         private void LoadData()
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
                 string query = "SELECT * FROM PersonData ORDER BY Id";
@@ -209,7 +208,7 @@ namespace Work1
             string fullName = "";
             string shareCount = "";
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
                 string queryPerson = "SELECT CONCAT(n_first, ' ', n_last) AS FullName, q_share, Note, Id FROM PersonData WHERE Id = @Id";
@@ -284,6 +283,50 @@ namespace Work1
                 // Identifier คือ prefix + (count+1)
                 return prefix + (count + 1).ToString();
             }
+        }
+
+        private void Reprint_Click(object sender, EventArgs e)
+        {
+            // ตรวจสอบว่า DataGridView มีแถวที่เลือกหรือไม่
+            if (dataGridView.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("กรุณาเลือกแถวที่ต้องการ reprint");
+                return;
+            }
+
+            // สมมุติว่าเลือกแถวแรกที่ถูกเลือก
+            int Id = Convert.ToInt32(dataGridView.SelectedRows[0].Cells["Id"].Value);
+            string currentRegStatus = dataGridView.SelectedRows[0].Cells["RegStatus"].Value.ToString();
+
+            // ตรวจสอบว่าบุคคลนี้ลงทะเบียนแล้วหรือไม่
+            if (currentRegStatus != "ลงทะเบียนแล้ว")
+            {
+                MessageBox.Show("บุคคลนี้ยังไม่ได้ลงทะเบียน ไม่สามารถ reprint ได้");
+                return;
+            }
+
+            // ตรวจสอบค่าในคอลัมน์ SelfCount และ ProxyCount
+            int selfCount = 0;
+            int proxyCount = 0;
+            if (dataGridView.SelectedRows[0].Cells["SelfCount"].Value != null)
+                int.TryParse(dataGridView.SelectedRows[0].Cells["SelfCount"].Value.ToString(), out selfCount);
+            if (dataGridView.SelectedRows[0].Cells["ProxyCount"].Value != null)
+                int.TryParse(dataGridView.SelectedRows[0].Cells["ProxyCount"].Value.ToString(), out proxyCount);
+
+            string attendChoice = "";
+            if (selfCount == 1)
+                attendChoice = "มาเอง";
+            else if (proxyCount == 1)
+                attendChoice = "มอบฉันทะ";
+            else
+            {
+                MessageBox.Show("ไม่พบข้อมูลการลงทะเบียนที่ถูกต้อง");
+                return;
+            }
+
+            // เปิดหน้าปริ้นโดยส่ง personId และ attendChoice ไปด้วย
+            PrintAgenda printForm = new PrintAgenda(Id, attendChoice);
+            printForm.Show();
         }
     }
 }

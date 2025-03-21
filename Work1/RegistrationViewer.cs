@@ -13,7 +13,6 @@ namespace Work1
 {
     public partial class RegistrationViewer: Form
     {
-        private string connectionString = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
         public RegistrationViewer()
         {
             InitializeComponent();
@@ -43,7 +42,7 @@ namespace Work1
         private void LoadCounts()
         {
             int selfCount = 0, proxyCount = 0;
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
                 // นับจำนวนแถวใน SelfRegistration
@@ -77,7 +76,7 @@ namespace Work1
         // ฟังก์ชันโหลดข้อมูลจากตาราง SelfRegistration และแสดงใน DataGridView
         private void LoadSelfData()
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
                 string query = "SELECT RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note FROM SelfRegistration ORDER BY RegistrationID";
@@ -93,7 +92,10 @@ namespace Work1
                     dataGridViewRegistration.Columns["ShareCount"].HeaderText = "จำนวนหุ้น";
                     dataGridViewRegistration.Columns["Note"].HeaderText = "หมายเหตุ";
                     dataGridViewRegistration.Columns["RegistrationID"].Visible = false;
+                    dataGridViewRegistration.Columns["Identifier"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
                     dataGridViewRegistration.Columns["ShareCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                    dataGridViewRegistration.Columns["PeopleCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dataGridViewRegistration.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
 
                     // จัดตำแหน่งข้อความใน Header ให้กึ่งกลาง
                     foreach (DataGridViewColumn col in dataGridViewRegistration.Columns)
@@ -107,7 +109,7 @@ namespace Work1
         // ฟังก์ชันโหลดข้อมูลจากตาราง ProxyRegistration และแสดงใน DataGridView
         private void LoadProxyData()
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
                 string query = "SELECT RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note FROM ProxyRegistration ORDER BY RegistrationID";
@@ -123,8 +125,11 @@ namespace Work1
                     dataGridViewRegistration.Columns["ShareCount"].HeaderText = "จำนวนหุ้น";
                     dataGridViewRegistration.Columns["Note"].HeaderText = "หมายเหตุ (ผู้รับมอบฉันทะ)";
                     dataGridViewRegistration.Columns["RegistrationID"].Visible = false;
+                    dataGridViewRegistration.Columns["Identifier"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
                     dataGridViewRegistration.Columns["ShareCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
                     dataGridViewRegistration.Columns["Note"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dataGridViewRegistration.Columns["PeopleCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    dataGridViewRegistration.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
 
                     // จัดตำแหน่งข้อความใน Header ให้กึ่งกลาง
                     foreach (DataGridViewColumn col in dataGridViewRegistration.Columns)
@@ -155,7 +160,7 @@ namespace Work1
         WHERE FullName LIKE '%' + @FullName + '%'
         ORDER BY FullName";
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 try
                 {

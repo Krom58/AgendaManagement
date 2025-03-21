@@ -12,12 +12,12 @@ using System.Data.SqlClient;
 using System.Drawing.Printing;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using System.Drawing.Configuration;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 
 namespace Work1
 {
     public partial class PrintAgenda: Form
     {
-        private string connectionString = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
         private int personId;
         private string attendChoice; // เก็บ attendChoice จากฟอร์มอื่น
         public PrintAgenda(int Id, string attendChoice)
@@ -40,67 +40,66 @@ namespace Work1
             previewDialog.Document = printDoc;
             previewDialog.ShowDialog();
         }
+        private int currentIndex = 0; // ตัวแปรเก็บข้อความที่พิมพ์ถึงอันที่เท่าไร
         private void PrintDoc_PrintPage(object sender, PrintPageEventArgs e)
         {
-            // กำหนดขนาดและตำแหน่งของคอลัมน์
-            float columnWidth = e.MarginBounds.Width / 2;
-            float columnHeight = e.MarginBounds.Height;
-            float leftColumnX = e.MarginBounds.Left;
-            float rightColumnX = e.MarginBounds.Left + columnWidth;
-            float yPosition = e.MarginBounds.Top;
-            float templateHeight = 200; // กำหนดความสูงของแต่ละ template
-            float lineSpacing = 0; // กำหนดระยะห่างระหว่างบรรทัด
+            e.Graphics.PageUnit = GraphicsUnit.Millimeter;
 
-            // แบ่งข้อความใน RichTextBox เป็นสองคอลัมน์
-            string[] templates = richTextBoxTemplate.Text.Split(new[] { "-----------------------------------------------------" }, StringSplitOptions.None);
-            List<string> leftColumnTemplates = new List<string>();
-            List<string> rightColumnTemplates = new List<string>();
+            float columnWidth = 107.45f;
+            float rowHeight = 69.7f;
+            int rows = 4;
+            int cols = 2;
 
-            for (int i = 0; i < templates.Length; i++)
+            // แบ่งข้อความใน RichTextBox
+            string[] cellTexts = richTextBoxTemplate.Text.Split(
+                new string[] { "-----------------------------------------------------" },
+                StringSplitOptions.RemoveEmptyEntries
+            );
+
+            // วาดข้อความ 8 ช่องต่อหน้า
+            int itemsPerPage = 8; // 2 คอลัมน์ × 4 แถว = 8 ช่องต่อหน้า
+            int cellIndex = currentIndex; // เริ่มต้นจาก currentIndex
+            int maxIndex = Math.Min(currentIndex + itemsPerPage, cellTexts.Length);
+
+            StringFormat sf = new StringFormat();
+            sf.Alignment = StringAlignment.Near;        // ชิดซ้าย
+            sf.LineAlignment = StringAlignment.Center;  // กึ่งกลางแนวตั้ง
+
+            float indent = 10f;
+
+            for (int row = 0; row < rows; row++)
             {
-                if (i % 2 == 0)
+                for (int col = 0; col < cols; col++)
                 {
-                    leftColumnTemplates.Add(templates[i]);
+                    if (cellIndex >= maxIndex) break;
+
+                    float x = col * columnWidth;
+                    float y = row * rowHeight;
+                    RectangleF rect = new RectangleF(x, y, columnWidth, rowHeight);
+
+                    RectangleF textRect = new RectangleF(rect.X + indent, rect.Y, rect.Width - indent, rect.Height);
+
+                    using (System.Drawing.Font font = new System.Drawing.Font("Angsana New", 12))
+                    {
+                        e.Graphics.DrawString(cellTexts[cellIndex], font, Brushes.Black, textRect, sf);
+                    }
+
+                    cellIndex++;
                 }
-                else
-                {
-                    rightColumnTemplates.Add(templates[i]);
-                }
+
+                if (cellIndex >= maxIndex) break;
             }
 
-            // วาดข้อความในคอลัมน์ซ้าย
-            foreach (string template in leftColumnTemplates)
+            // ตรวจสอบว่ามีข้อความเหลือหรือไม่
+            if (cellIndex < cellTexts.Length)
             {
-                RectangleF rect = new RectangleF(leftColumnX, yPosition, columnWidth, templateHeight);
-                e.Graphics.DrawRectangle(Pens.Black, rect.X, rect.Y, rect.Width, rect.Height);
-
-                // วัดขนาดของข้อความ
-                SizeF textSize = e.Graphics.MeasureString(template, new System.Drawing.Font("Angsana New", 12));
-                // คำนวณตำแหน่งการวาดเพื่อให้อยู่กึ่งกลาง
-                float textX = rect.X + (rect.Width - textSize.Width) / 2;
-                float textY = rect.Y + (rect.Height - textSize.Height) / 2;
-
-                e.Graphics.DrawString(template, new System.Drawing.Font("Angsana New", 12), Brushes.Black, new PointF(textX, textY));
-                yPosition += templateHeight + lineSpacing; // เพิ่มระยะห่างระหว่าง template
+                currentIndex = cellIndex; // อัปเดต currentIndex เพื่อพิมพ์หน้าถัดไป
+                e.HasMorePages = true;   // แจ้งให้ระบบพิมพ์หน้าถัดไป
             }
-
-            // รีเซ็ตตำแหน่ง y สำหรับคอลัมน์ขวา
-            yPosition = e.MarginBounds.Top;
-
-            // วาดข้อความในคอลัมน์ขวา
-            foreach (string template in rightColumnTemplates)
+            else
             {
-                RectangleF rect = new RectangleF(rightColumnX, yPosition, columnWidth, templateHeight);
-                e.Graphics.DrawRectangle(Pens.Black, rect.X, rect.Y, rect.Width, rect.Height);
-
-                // วัดขนาดของข้อความ
-                SizeF textSize = e.Graphics.MeasureString(template, new System.Drawing.Font("Angsana New", 12));
-                // คำนวณตำแหน่งการวาดเพื่อให้อยู่กึ่งกลาง
-                float textX = rect.X + (rect.Width - textSize.Width) / 2;
-                float textY = rect.Y + (rect.Height - textSize.Height) / 2;
-
-                e.Graphics.DrawString(template, new System.Drawing.Font("Angsana New", 12), Brushes.Black, new PointF(textX, textY));
-                yPosition += templateHeight + lineSpacing; // เพิ่มระยะห่างระหว่าง template
+                currentIndex = 0;       // รีเซ็ต currentIndex หลังจากพิมพ์ครบทุกหน้า
+                e.HasMorePages = false; // แจ้งว่าพิมพ์เสร็จแล้ว
             }
         }
 
@@ -115,7 +114,7 @@ namespace Work1
             string q_share = "";
             string identifier = "";
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
 
