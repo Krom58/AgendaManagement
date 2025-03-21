@@ -61,7 +61,6 @@ namespace Work1
                 return;
             }
 
-            // ตรวจสอบว่า AgendaNumber ไม่เกิน 9 และไม่ซ้ำกันในฐานข้อมูล
             if (IsAgendaNumberDuplicate(agendaNumber))
             {
                 MessageBox.Show("วาระที่นี้มีอยู่แล้ว กรุณาใช้หมายเลขอื่น");
@@ -73,8 +72,8 @@ namespace Work1
                 using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
                     conn.Open();
-                    string query = @"INSERT INTO HeaderTemplate (MeetingNumber, AgendaNumber, AgendaTitle, FixedContent)
-                                     VALUES (@MeetingNumber, @AgendaNumber, @AgendaTitle, @FixedContent)";
+                    string query = @"INSERT INTO HeaderTemplate (MeetingNumber, AgendaNumber, AgendaTitle)
+                                     VALUES (@MeetingNumber, @AgendaNumber, @AgendaTitle)";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@MeetingNumber", meetingNumber);
