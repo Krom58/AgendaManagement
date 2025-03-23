@@ -16,7 +16,7 @@ using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 
 namespace Work1
 {
-    public partial class PrintAgenda: Form
+    public partial class PrintAgenda : Form
     {
         private int personId;
         private string attendChoice; // เก็บ attendChoice จากฟอร์มอื่น
@@ -33,12 +33,32 @@ namespace Work1
         }
         private void PrintDoc_Click(object sender, EventArgs e)
         {
+            // รีเซ็ต currentIndex ที่นี่เท่านั้น
+            currentIndex = 0;
+
             PrintDocument printDoc = new PrintDocument();
             printDoc.PrintPage += new PrintPageEventHandler(PrintDoc_PrintPage);
 
-            PrintPreviewDialog previewDialog = new PrintPreviewDialog();
-            previewDialog.Document = printDoc;
-            previewDialog.ShowDialog();
+            // ตั้งค่าให้ใช้เครื่องพิมพ์เริ่มต้นของระบบ
+            printDoc.PrinterSettings.PrinterName = new PrinterSettings().PrinterName;
+
+            // ตรวจสอบความพร้อมของเครื่องพิมพ์
+            if (!printDoc.PrinterSettings.IsValid)
+            {
+                MessageBox.Show("ไม่พบเครื่องพิมพ์เริ่มต้น กรุณาตรวจสอบการตั้งค่าเครื่องพิมพ์ในระบบ");
+                return;
+            }
+
+            // สั่งพิมพ์โดยตรง
+            try
+            {
+                printDoc.Print();
+                MessageBox.Show("พิมพ์สำเร็จ");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"เกิดข้อผิดพลาดในการพิมพ์: {ex.Message}");
+            }
         }
         private int currentIndex = 0; // ตัวแปรเก็บข้อความที่พิมพ์ถึงอันที่เท่าไร
         private void PrintDoc_PrintPage(object sender, PrintPageEventArgs e)
@@ -50,57 +70,68 @@ namespace Work1
             int rows = 4;
             int cols = 2;
 
-            // แบ่งข้อความใน RichTextBox
-            string[] cellTexts = richTextBoxTemplate.Text.Split(
+            // แบ่งข้อความใน RichTextBox โดยลบข้อความว่างออกด้วย RemoveEmptyEntries
+            string[] allCells = richTextBoxTemplate.Text.Split(
                 new string[] { "-----------------------------------------------------" },
                 StringSplitOptions.RemoveEmptyEntries
             );
 
-            // วาดข้อความ 8 ช่องต่อหน้า
-            int itemsPerPage = 8; // 2 คอลัมน์ × 4 แถว = 8 ช่องต่อหน้า
-            int cellIndex = currentIndex; // เริ่มต้นจาก currentIndex
-            int maxIndex = Math.Min(currentIndex + itemsPerPage, cellTexts.Length);
+            // หากต้องการตรวจสอบว่ามี element ว่างหรือไม่ สามารถกรองออกอีกที:
+            List<string> cellTexts = new List<string>();
+            foreach (var cell in allCells)
+            {
+                if (!string.IsNullOrWhiteSpace(cell))
+                    cellTexts.Add(cell.Trim());
+            }
 
+            int maxIndex = cellTexts.Count; // จำนวนข้อความที่แท้จริง
+
+            // กำหนดตัวแปร StringFormat สำหรับการจัดวางข้อความ
             StringFormat sf = new StringFormat();
-            sf.Alignment = StringAlignment.Near;        // ชิดซ้าย
-            sf.LineAlignment = StringAlignment.Center;  // กึ่งกลางแนวตั้ง
+            sf.Alignment = StringAlignment.Near;
+            sf.LineAlignment = StringAlignment.Center;
 
-            float indent = 10f;
+            float indent = 7.5f;
 
+            // บันทึกค่า currentIndex เริ่มต้นของหน้าปัจจุบัน เพื่อใช้ตรวจสอบว่าหน้านี้พิมพ์อะไรไปหรือไม่
+            int startIndex = currentIndex;
+
+            // วาดข้อความในรูปแบบตาราง (2 คอลัมน์ x 4 แถว = 8 ช่อง)
             for (int row = 0; row < rows; row++)
             {
                 for (int col = 0; col < cols; col++)
                 {
-                    if (cellIndex >= maxIndex) break;
+                    if (currentIndex >= maxIndex)
+                        break;
 
                     float x = col * columnWidth;
                     float y = row * rowHeight;
                     RectangleF rect = new RectangleF(x, y, columnWidth, rowHeight);
-
                     RectangleF textRect = new RectangleF(rect.X + indent, rect.Y, rect.Width - indent, rect.Height);
 
                     using (System.Drawing.Font font = new System.Drawing.Font("Angsana New", 12))
                     {
-                        e.Graphics.DrawString(cellTexts[cellIndex], font, Brushes.Black, textRect, sf);
+                        e.Graphics.DrawString(cellTexts[currentIndex], font, Brushes.Black, textRect, sf);
                     }
 
-                    cellIndex++;
+                    currentIndex++;
                 }
-
-                if (cellIndex >= maxIndex) break;
+                if (currentIndex >= maxIndex)
+                    break;
             }
 
-            // ตรวจสอบว่ามีข้อความเหลือหรือไม่
-            if (cellIndex < cellTexts.Length)
+            // ถ้าในหน้าปัจจุบันไม่พิมพ์อะไร (เช่น element ว่าง) ให้หยุดการพิมพ์เพื่อป้องกันการวนลูปไม่รู้จบ
+            if (currentIndex == startIndex)
             {
-                currentIndex = cellIndex; // อัปเดต currentIndex เพื่อพิมพ์หน้าถัดไป
-                e.HasMorePages = true;   // แจ้งให้ระบบพิมพ์หน้าถัดไป
+                e.HasMorePages = false;
+                return;
             }
+
+            // ตรวจสอบว่ามีข้อความเหลือให้พิมพ์ในหน้าถัดไปหรือไม่
+            if (currentIndex < maxIndex)
+                e.HasMorePages = true;
             else
-            {
-                currentIndex = 0;       // รีเซ็ต currentIndex หลังจากพิมพ์ครบทุกหน้า
-                e.HasMorePages = false; // แจ้งว่าพิมพ์เสร็จแล้ว
-            }
+                e.HasMorePages = false;
         }
 
         private void PrintAgenda_Load(object sender, EventArgs e)
@@ -165,7 +196,7 @@ namespace Work1
 
                 // ดึงข้อมูล Template จากตาราง HeaderTemplate ทั้งหมด
                 string queryTemplate = @"
-                SELECT MeetingNumber, AgendaNumber, AgendaTitle, FixedContent
+                SELECT MeetingNumber, AgendaNumber, AgendaTitle
                 FROM HeaderTemplate
                 ORDER BY HeaderID";
                 using (SqlCommand cmd = new SqlCommand(queryTemplate, conn))
@@ -178,15 +209,25 @@ namespace Work1
                             string meetingNumber = reader["MeetingNumber"].ToString();
                             string agendaNumber = reader["AgendaNumber"].ToString();
                             string agendaTitle = reader["AgendaTitle"].ToString();
-                            string fixedContent = reader["FixedContent"].ToString();
+
+                            using (System.Drawing.Font font = new System.Drawing.Font("Angsana New", 12))
+                            {
+                                // กำหนดความกว้างสูงสุด (ปรับค่าให้เหมาะสมกับ layout ของคุณ)
+                                float maxTextWidth = 265f;
+                                using (Graphics g = richTextBoxTemplate.CreateGraphics())
+                                {
+                                    agendaTitle = WrapText(g, agendaTitle, font, maxTextWidth);
+                                }
+                            }
 
                             // ประกอบ Block Template สำหรับแต่ละแถวใน HeaderTemplate
                             documentTemplate.AppendLine($"บัตรลงคะแนนการประชุมสามัญผู้ถือหุ้น ครั้งที่ {meetingNumber}              {identifier}");
-                            documentTemplate.AppendLine($"วาระที่ {agendaNumber}    {agendaTitle}");
+                            documentTemplate.Append($"วาระที่ {agendaNumber}    {agendaTitle}");
                             documentTemplate.AppendLine($"ชื่อ: {fullName}");
                             documentTemplate.AppendLine($"จำนวนหุ้น: {q_share}");
                             documentTemplate.AppendLine("   [  ] เห็นด้วย           [  ] ไม่เห็นด้วย         [  ] งดออกเสียง");
                             documentTemplate.AppendLine("     (Approved)         (Disapproved)     (Abstained)");
+                            documentTemplate.AppendLine("");
                             documentTemplate.AppendLine("ลงชื่อ __________________ ผู้ถือหุ้น");
                             documentTemplate.Append("-----------------------------------------------------");
                         }
@@ -202,9 +243,62 @@ namespace Work1
 
         private void comboBoxPerson_TextChanged(object sender, EventArgs e)
         {
-            
+
         }
 
-        
+        private int FindMaxFit(string text, int start, System.Drawing.Font font, Graphics g, float maxWidth)
+        {
+            int lastSpace = -1;
+            int fit = 0;
+            for (int i = start; i < text.Length; i++)
+            {
+                string substr = text.Substring(start, i - start + 1);
+                SizeF size = g.MeasureString(substr, font);
+                if (size.Width > maxWidth)
+                {
+                    // หากเจอขนาดเกิน ให้ตัดที่เว้นวรรคล่าสุด (ถ้ามี)
+                    if (lastSpace != -1)
+                    {
+                        return lastSpace - start + 1;
+                    }
+                    // ถ้าไม่มีเว้นวรรคเลย ให้ตัดก่อนตัวอักษรที่ทำให้เกิน
+                    return i - start;
+                }
+                if (char.IsWhiteSpace(text[i]))
+                {
+                    lastSpace = i;
+                }
+                fit = i - start + 1;
+            }
+            return fit;
+        }
+
+        // ฟังก์ชัน WrapText ใหม่
+        private string WrapText(Graphics g, string text, System.Drawing.Font font, float maxWidth)
+        {
+            // ถ้ามีบรรทัดเว้นไว้ใน text ให้รวมให้เป็นข้อความต่อเนื่อง
+            text = text.Replace("\r", " ").Replace("\n", " ");
+
+            StringBuilder wrapped = new StringBuilder();
+            int start = 0;
+            while (start < text.Length)
+            {
+                // หาจำนวนตัวอักษรที่สามารถพิมพ์ในบรรทัดนี้ได้
+                int count = FindMaxFit(text, start, font, g, maxWidth);
+                if (count == 0)
+                    break;
+
+                string line = text.Substring(start, count).TrimEnd();
+                wrapped.AppendLine(line);
+                start += count;
+
+                // ข้ามช่องว่างที่อาจเกิดขึ้นหลังบรรทัดที่ตัดแล้ว
+                while (start < text.Length && char.IsWhiteSpace(text[start]))
+                {
+                    start++;
+                }
+            }
+            return wrapped.ToString();
+        }
     }
 }

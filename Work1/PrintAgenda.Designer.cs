@@ -48,7 +48,7 @@
             this.PrintDoc.Name = "PrintDoc";
             this.PrintDoc.Size = new System.Drawing.Size(165, 50);
             this.PrintDoc.TabIndex = 20;
-            this.PrintDoc.Text = "ปริ้น";
+            this.PrintDoc.Text = "สั่งพิมพ์";
             this.PrintDoc.UseVisualStyleBackColor = true;
             this.PrintDoc.Click += new System.EventHandler(this.PrintDoc_Click);
             // 

@@ -144,7 +144,7 @@
             this.Reprint.Name = "Reprint";
             this.Reprint.Size = new System.Drawing.Size(150, 50);
             this.Reprint.TabIndex = 15;
-            this.Reprint.Text = "ปริ้นใหม่";
+            this.Reprint.Text = "พิมพ์ใหม่";
             this.Reprint.UseVisualStyleBackColor = true;
             this.Reprint.Click += new System.EventHandler(this.Reprint_Click);
             // 

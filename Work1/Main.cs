@@ -24,9 +24,6 @@ namespace Work1
 
             // แสดง Form2
             ImportExcel.Show();
-
-            // ซ่อน Form1 ไว้เพื่อให้เห็นเฉพาะ Form2
-            this.Hide();
         }
 
         private void CheckDB_Click(object sender, EventArgs e)
@@ -36,9 +33,6 @@ namespace Work1
 
             // แสดง Form2
             CheckDB.Show();
-
-            // ซ่อน Form1 ไว้เพื่อให้เห็นเฉพาะ Form2
-            this.Hide();
         }
 
         private void Agenda_Click(object sender, EventArgs e)
@@ -48,9 +42,6 @@ namespace Work1
 
             // แสดง Form2
             Agenda.Show();
-
-            // ซ่อน Form1 ไว้เพื่อให้เห็นเฉพาะ Form2
-            this.Hide();
         }
 
         private void RegistrationViewer_Click(object sender, EventArgs e)
@@ -60,9 +51,6 @@ namespace Work1
 
             // แสดง Form2
             RegistrationViewer.Show();
-
-            // ซ่อน Form1 ไว้เพื่อให้เห็นเฉพาะ Form2
-            this.Hide();
         }
     }
 }

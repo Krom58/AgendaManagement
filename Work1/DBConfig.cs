@@ -9,6 +9,6 @@ namespace Work1
     public static class DBConfig
     {
         // Connection string ที่ใช้สำหรับเชื่อมต่อฐานข้อมูล
-        public static string connectionString { get; } = "Data Source=KROM\\SQLEXPRESS;Initial Catalog=ExcelDataDB;Integrated Security=True;";
+        public static string connectionString { get; } = "Server=10.10.0.42\\SQLSET;Database=ExcelDataDB;User Id=sa;Password=Wutt@1976;Trusted_Connection=False;";
     }
 }
