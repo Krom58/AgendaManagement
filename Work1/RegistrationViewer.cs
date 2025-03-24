@@ -151,14 +151,14 @@ namespace Work1
 
             // Query ดึงข้อมูลจากทั้ง SelfRegistration และ ProxyRegistration ด้วย UNION ALL
             string query = @"
-        SELECT 'มาเอง' AS Type, RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note
-        FROM SelfRegistration
-        WHERE FullName LIKE '%' + @FullName + '%'
-        UNION ALL
-        SELECT 'มอบฉันทะ' AS Type, RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note
-        FROM ProxyRegistration
-        WHERE FullName LIKE '%' + @FullName + '%'
-        ORDER BY FullName";
+            SELECT 'มาเอง' AS Type, RegistrationID, Identifier, PeopleCount, CONCAT(n_title, n_first, ' ', n_last) AS FullName, ShareCount, Note
+            FROM SelfRegistration
+            WHERE FullName LIKE '%' + @FullName + '%'
+            UNION ALL
+            SELECT 'มอบฉันทะ' AS Type, RegistrationID, Identifier, PeopleCount, CONCAT(n_title, n_first, ' ', n_last) AS FullName, ShareCount, Note
+            FROM ProxyRegistration
+            WHERE FullName LIKE '%' + @FullName + '%'
+            ORDER BY FullName";
 
             using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {

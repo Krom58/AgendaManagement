@@ -211,7 +211,7 @@ namespace Work1
             using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
-                string queryPerson = "SELECT CONCAT(n_first, ' ', n_last) AS FullName, q_share, Note, Id FROM PersonData WHERE Id = @Id";
+                string queryPerson = "SELECT CONCAT(n_title, n_first, ' ', n_last) AS FullName, q_share, Note, Id FROM PersonData WHERE Id = @Id";
                 using (SqlCommand cmd = new SqlCommand(queryPerson, conn))
                 {
                     cmd.Parameters.AddWithValue("@Id", Id);

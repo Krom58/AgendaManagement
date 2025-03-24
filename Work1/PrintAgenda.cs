@@ -151,7 +151,7 @@ namespace Work1
 
                 // ดึงข้อมูลจาก PersonData สำหรับ personId
                 string queryPerson = @"
-                SELECT CONCAT(n_first, ' ', n_last) AS FullName, q_share
+                SELECT CONCAT(n_title, n_first, ' ', n_last) AS FullName, q_share
                 FROM PersonData
                 WHERE Id = @Id";
                 using (SqlCommand cmd = new SqlCommand(queryPerson, conn))

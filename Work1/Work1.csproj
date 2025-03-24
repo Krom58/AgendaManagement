@@ -227,6 +227,12 @@
     <Compile Include="Agenda.Designer.cs">
       <DependentUpon>Agenda.cs</DependentUpon>
     </Compile>
+    <Compile Include="AgendaSummary.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AgendaSummary.Designer.cs">
+      <DependentUpon>AgendaSummary.cs</DependentUpon>
+    </Compile>
     <Compile Include="CheckDB.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -266,6 +272,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RegistrationSummary.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RegistrationSummary.Designer.cs">
+      <DependentUpon>RegistrationSummary.cs</DependentUpon>
+    </Compile>
     <Compile Include="RegistrationViewer.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -274,6 +286,9 @@
     </Compile>
     <EmbeddedResource Include="Agenda.resx">
       <DependentUpon>Agenda.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AgendaSummary.resx">
+      <DependentUpon>AgendaSummary.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="CheckDB.resx">
       <DependentUpon>CheckDB.cs</DependentUpon>
@@ -302,6 +317,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="RegistrationSummary.resx">
+      <DependentUpon>RegistrationSummary.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="RegistrationViewer.resx">
       <DependentUpon>RegistrationViewer.cs</DependentUpon>
     </EmbeddedResource>

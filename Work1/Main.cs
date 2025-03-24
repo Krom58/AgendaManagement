@@ -52,5 +52,23 @@ namespace Work1
             // แสดง Form2
             RegistrationViewer.Show();
         }
+
+        private void RegistrationSummary_Click(object sender, EventArgs e)
+        {
+            // สร้างอินสแตนซ์ของ Form2 พร้อมส่ง this (Form1) ไปใน constructor
+            RegistrationSummary RegistrationSummary = new RegistrationSummary(this);
+
+            // แสดง Form2
+            RegistrationSummary.Show();
+        }
+
+        private void AgendaSummary_Click(object sender, EventArgs e)
+        {
+            // สร้างอินสแตนซ์ของ Form2 พร้อมส่ง this (Form1) ไปใน constructor
+            AgendaSummary AgendaSummary = new AgendaSummary(this);
+
+            // แสดง Form2
+            AgendaSummary.Show();
+        }
     }
 }
