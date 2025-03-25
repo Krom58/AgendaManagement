@@ -184,9 +184,9 @@
             this.label6.Font = new System.Drawing.Font("Angsana New", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label6.Location = new System.Drawing.Point(583, 185);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(111, 36);
+            this.label6.Size = new System.Drawing.Size(109, 36);
             this.label6.TabIndex = 31;
-            this.label6.Text = "จำนวนมาเอง";
+            this.label6.Text = "จำนวนมาคน";
             // 
             // label1
             // 
@@ -404,6 +404,7 @@
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(670, 51);
             this.comboBox1.TabIndex = 98;
+            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
             // RegistrationSummary
             // 
