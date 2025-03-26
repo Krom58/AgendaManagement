@@ -159,16 +159,30 @@ namespace Work1
         private void btnDisapprove_Click(object sender, EventArgs e)
         {
             SaveSelectedData("ไม่เห็นด้วย");
+            // เก็บค่า HeaderID ที่เลือกไว้ก่อน
+            int currentHeaderID = comboBox1.SelectedValue != null ? Convert.ToInt32(comboBox1.SelectedValue) : 0;
+            LoadHeaderTemplateData();
+            // ตั้งค่า SelectedValue กลับไป
+            if (currentHeaderID != 0)
+                comboBox1.SelectedValue = currentHeaderID;
         }
 
         private void btnInvalidBallot_Click(object sender, EventArgs e)
         {
             SaveSelectedData("บัตรเสีย");
+            int currentHeaderID = comboBox1.SelectedValue != null ? Convert.ToInt32(comboBox1.SelectedValue) : 0;
+            LoadHeaderTemplateData();
+            if (currentHeaderID != 0)
+                comboBox1.SelectedValue = currentHeaderID;
         }
 
         private void btnAbstain_Click(object sender, EventArgs e)
         {
             SaveSelectedData("งดออกเสียง");
+            int currentHeaderID = comboBox1.SelectedValue != null ? Convert.ToInt32(comboBox1.SelectedValue) : 0;
+            LoadHeaderTemplateData();
+            if (currentHeaderID != 0)
+                comboBox1.SelectedValue = currentHeaderID;
         }
 
         private void SaveSelectedData(string voteType)
@@ -270,30 +284,56 @@ namespace Work1
         private void comboBox1_SelectedIndexChanged_1(object sender, EventArgs e)
         {
             if (comboBox1.SelectedValue == null) return;
-
             DataRowView drv = comboBox1.SelectedItem as DataRowView;
             if (drv != null)
             {
                 int headerID = Convert.ToInt32(drv["HeaderID"]);
+                // เช็คค่า IsAgendaClosed ใน DB
+                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                {
+                    conn.Open();
+                    string checkQuery = "SELECT IsAgendaClosed FROM HeaderTemplate WHERE HeaderID = @HeaderID";
+                    using (SqlCommand cmd = new SqlCommand(checkQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@HeaderID", headerID);
+                        object result = cmd.ExecuteScalar();
+                        if (result != null && result != DBNull.Value)
+                        {
+                            bool isClosed = Convert.ToBoolean(result);
+                            if (isClosed)
+                            {
+                                // ถ้าวาระปิดแล้ว ให้ปิดปุ่มและคอนโทรลที่เกี่ยวข้อง
+                                DisableAgendaControls();
+                            }
+                            else
+                            {
+                                // ถ้าวาระยังไม่ปิด ให้เปิดปุ่มและคอนโทรล
+                                EnableAgendaControls();
+                            }
+                        }
+                        if (drv != null)
+                        {
+                            DataTable dt = comboBox1.DataSource as DataTable;
+                            if (dt == null) return;
 
-                DataTable dt = comboBox1.DataSource as DataTable;
-                if (dt == null) return;
+                            DataRow[] rows = dt.Select($"HeaderID = {headerID}");
+                            if (rows.Length == 0) return;
 
-                DataRow[] rows = dt.Select($"HeaderID = {headerID}");
-                if (rows.Length == 0) return;
+                            long qShareTotal = rows[0]["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(rows[0]["qShareTotal"]);
+                            int peopleCountTotal = rows[0]["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(rows[0]["peopleCountTotal"]);
 
-                long qShareTotal = rows[0]["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(rows[0]["qShareTotal"]);
-                int peopleCountTotal = rows[0]["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(rows[0]["peopleCountTotal"]);
+                            label15.Text = qShareTotal.ToString("N0");
+                            label17.Text = peopleCountTotal.ToString();
 
-                label15.Text = qShareTotal.ToString("N0");
-                label17.Text = peopleCountTotal.ToString();
+                            label7.Text = qShareTotal.ToString("N0");
 
-                label7.Text = qShareTotal.ToString("N0");
+                            string selectedAgendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
+                            LoadVoteResults(selectedAgendaItem);
 
-                string selectedAgendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
-                LoadVoteResults(selectedAgendaItem);
-
-                CalculateAndDisplayVoteSummary();
+                            CalculateAndDisplayVoteSummary();
+                        }
+                    }
+                }
             }
         }
 
@@ -405,6 +445,61 @@ namespace Work1
                 return result;
             }
             return 0;
+        }
+
+        private void btnEndAgenda_Click(object sender, EventArgs e)
+        {
+            if (comboBox1.SelectedValue == null) return;
+
+            // ถามผู้ใช้ว่ามั่นใจที่จะจบวาระหรือไม่
+            DialogResult confirmResult = MessageBox.Show(
+                "คุณแน่ใจหรือไม่ที่จะจบวาระนี้? เมื่อจบแล้วจะไม่สามารถแก้ไขข้อมูลได้อีก",
+                "ยืนยันการจบวาระ",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirmResult == DialogResult.No)
+                return;
+
+            int headerID = (int)comboBox1.SelectedValue;
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            {
+                conn.Open();
+                string updateQuery = "UPDATE HeaderTemplate SET IsAgendaClosed = 1 WHERE HeaderID = @HeaderID";
+                using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@HeaderID", headerID);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            // ปิดปุ่มและคอนโทรล
+            DisableAgendaControls();
+
+            MessageBox.Show("บันทึกสำเร็จ");
+        }
+        private void DisableAgendaControls()
+        {
+            btnEndAgenda.Enabled = false;
+            btnDisapprove.Enabled = false;
+            btnInvalidBallot.Enabled = false;
+            btnAbstain.Enabled = false;
+            btnSearchIdentifier.Enabled = false;
+            txtSearchIdentifier.Enabled = false;
+            dataGridViewRegistration.ReadOnly = true;
+            dataGridView8.ReadOnly = true;
+        }
+
+        private void EnableAgendaControls()
+        {
+            btnEndAgenda.Enabled = true;
+            btnDisapprove.Enabled = true;
+            btnInvalidBallot.Enabled = true;
+            btnAbstain.Enabled = true;
+            btnSearchIdentifier.Enabled = true;
+            txtSearchIdentifier.Enabled = true;
+            dataGridViewRegistration.ReadOnly = false;
+            dataGridView8.ReadOnly = false;
         }
     }
 }

@@ -87,16 +87,12 @@ namespace Work1
 
                     if (count > 0)
                     {
-                        DialogResult result = MessageBox.Show(
-                            $"วาระที่ {comboBox1.Text} ได้ลงทะเบียนไปแล้ว\nคุณต้องการบันทึกซ้ำหรือไม่?",
-                            "ยืนยันการบันทึกซ้ำ",
-                            MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Question);
-
-                        if (result == DialogResult.No)
-                        {
-                            return;
-                        }
+                        MessageBox.Show(
+                            $"วาระที่ {comboBox1.Text} ได้ลงทะเบียนไปแล้วและไม่สามารถบันทึกซ้ำได้",
+                            "ไม่สามารถบันทึกซ้ำได้",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return;
                     }
                 }
 

@@ -275,13 +275,41 @@ namespace Work1
         }
         private string GetNextIdentifier(SqlConnection conn, string tableName, string prefix)
         {
-            // Query นับจำนวนแถวในตารางที่ระบุ
-            string query = $"SELECT COUNT(*) FROM {tableName}";
+            // ดึงค่า Identifier ที่มีอยู่ในตารางที่มี prefix ที่ระบุ
+            string query = $"SELECT Identifier FROM {tableName} WHERE Identifier LIKE @prefixPattern";
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {
-                int count = (int)cmd.ExecuteScalar();
-                // Identifier คือ prefix + (count+1)
-                return prefix + (count + 1).ToString();
+                cmd.Parameters.AddWithValue("@prefixPattern", prefix + "%");
+                List<int> numbers = new List<int>();
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string identifier = reader["Identifier"].ToString();
+                        // สมมุติว่า Identifier มีรูปแบบ เช่น P1, P2, P3...
+                        if (identifier.Length > 1 && int.TryParse(identifier.Substring(1), out int num))
+                        {
+                            numbers.Add(num);
+                        }
+                    }
+                }
+                // ถ้ายังไม่มีข้อมูล ให้ return ค่าตัวแรก
+                if (numbers.Count == 0)
+                    return prefix + "1";
+
+                // เรียงลำดับตัวเลขที่มีอยู่
+                numbers.Sort();
+
+                // หาเลขที่หายไป (เล็กสุดที่ไม่มีอยู่ในชุด)
+                int nextNumber = 1;
+                foreach (int num in numbers)
+                {
+                    if (num == nextNumber)
+                        nextNumber++;
+                    else if (num > nextNumber)
+                        break;
+                }
+                return prefix + nextNumber.ToString();
             }
         }
 
@@ -327,6 +355,105 @@ namespace Work1
             // เปิดหน้าปริ้นโดยส่ง personId และ attendChoice ไปด้วย
             PrintAgenda printForm = new PrintAgenda(Id, attendChoice);
             printForm.Show();
+        }
+
+        private void btnReregister_Click(object sender, EventArgs e)
+        {
+            // ตรวจสอบว่า DataGridView มีแถวที่เลือกหรือไม่
+            if (dataGridView.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("กรุณาเลือกแถวที่ต้องการ re-register");
+                return;
+            }
+
+            // สมมุติว่าเลือกแถวแรกที่ถูกเลือก
+            int personId = Convert.ToInt32(dataGridView.SelectedRows[0].Cells["Id"].Value);
+            string currentRegStatus = dataGridView.SelectedRows[0].Cells["RegStatus"].Value.ToString();
+
+            // ตรวจสอบว่าลงทะเบียนแล้วหรือไม่ ถ้ายังไม่ลงทะเบียน ให้แจ้งให้ลงทะเบียนก่อน
+            if (currentRegStatus != "ลงทะเบียนแล้ว")
+            {
+                MessageBox.Show("บุคคลนี้ยังไม่ได้ลงทะเบียน กรุณาลงทะเบียนก่อน re-register");
+                return;
+            }
+
+            // ถามยืนยันการ re-register
+            DialogResult result = MessageBox.Show(
+                "คุณแน่ใจหรือไม่ที่จะ re-register บุคคลนี้? ข้อมูลการลงทะเบียนเดิมจะถูกลบออก",
+                "ยืนยันการ re-register",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+            if (result == DialogResult.No)
+            {
+                return;
+            }
+
+            // ลบข้อมูลในตาราง SelfRegistration และ ProxyRegistration สำหรับบุคคลที่เลือก
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            {
+                conn.Open();
+
+                string deleteSelf = "DELETE FROM SelfRegistration WHERE Id = @Id";
+                using (SqlCommand cmd = new SqlCommand(deleteSelf, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", personId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                string deleteProxy = "DELETE FROM ProxyRegistration WHERE Id = @Id";
+                using (SqlCommand cmd = new SqlCommand(deleteProxy, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", personId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            // เปิด FormRegistrationChoice เพื่อเลือกประเภทการเข้าร่วม (มาเอง หรือ มอบฉันทะ)
+            FormRegistrationChoice choiceForm = new FormRegistrationChoice();
+            if (choiceForm.ShowDialog() == DialogResult.OK)
+            {
+                string attendChoice = choiceForm.SelectedChoice;  // "มาเอง" หรือ "มอบฉันทะ"
+
+                // เปิด MultiInputForm เพื่อรับข้อมูลเพิ่มเติม (จำนวนคนและหมายเหตุ)
+                MultiInputForm multiInputForm = new MultiInputForm();
+                if (multiInputForm.ShowDialog() == DialogResult.OK)
+                {
+                    string peopleCountInput = multiInputForm.PeopleCountInput;
+                    string noteInput = multiInputForm.NoteInput;
+
+                    // อัปเดตสถานะใน PersonData ให้เป็น "ลงทะเบียนแล้ว" และอัปเดตคอลัมน์ SelfCount/ProxyCount ให้เป็น 1 ตามที่เลือก
+                    using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                    {
+                        conn.Open();
+                        string updatePersonQuery = @"
+                    UPDATE PersonData
+                    SET RegStatus = N'ลงทะเบียนแล้ว',
+                        SelfCount = CASE WHEN @AttendType = N'มาเอง' THEN 1 ELSE NULL END,
+                        ProxyCount = CASE WHEN @AttendType = N'มอบฉันทะ' THEN 1 ELSE NULL END,
+                        Note = @Note
+                    WHERE Id = @Id";
+                        using (SqlCommand cmd = new SqlCommand(updatePersonQuery, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@AttendType", attendChoice);
+                            cmd.Parameters.AddWithValue("@Note", noteInput);
+                            cmd.Parameters.AddWithValue("@Id", personId);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    MessageBox.Show("Re-registration สำเร็จแล้ว");
+
+                    // รีเฟรช DataGridView
+                    LoadData();
+
+                    // ดำเนินการแทรกข้อมูลลงในตารางการลงทะเบียนเพิ่มเติม (ถ้ามี)
+                    InsertRegistrationRecord(personId, attendChoice, noteInput, peopleCountInput);
+
+                    // เปิดหน้าปริ้น (PrintAgenda)
+                    PrintAgenda printForm = new PrintAgenda(personId, attendChoice);
+                    printForm.Show();
+                }
+            }
         }
     }
 }

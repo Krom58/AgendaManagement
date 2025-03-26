@@ -69,6 +69,7 @@
             this.btnInvalidBallot = new System.Windows.Forms.Button();
             this.btnAbstain = new System.Windows.Forms.Button();
             this.dataGridView8 = new System.Windows.Forms.DataGridView();
+            this.btnEndAgenda = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView6)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView7)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView9)).BeginInit();
@@ -495,11 +496,23 @@
             this.dataGridView8.Size = new System.Drawing.Size(535, 360);
             this.dataGridView8.TabIndex = 115;
             // 
+            // btnEndAgenda
+            // 
+            this.btnEndAgenda.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnEndAgenda.Location = new System.Drawing.Point(1322, 261);
+            this.btnEndAgenda.Name = "btnEndAgenda";
+            this.btnEndAgenda.Size = new System.Drawing.Size(150, 75);
+            this.btnEndAgenda.TabIndex = 116;
+            this.btnEndAgenda.Text = "จบวาระ";
+            this.btnEndAgenda.UseVisualStyleBackColor = true;
+            this.btnEndAgenda.Click += new System.EventHandler(this.btnEndAgenda_Click);
+            // 
             // AgendaSummary
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1484, 711);
+            this.Controls.Add(this.btnEndAgenda);
             this.Controls.Add(this.dataGridView8);
             this.Controls.Add(this.btnAbstain);
             this.Controls.Add(this.btnInvalidBallot);
@@ -603,5 +616,6 @@
         private System.Windows.Forms.Button btnInvalidBallot;
         private System.Windows.Forms.Button btnAbstain;
         private System.Windows.Forms.DataGridView dataGridView8;
+        private System.Windows.Forms.Button btnEndAgenda;
     }
 }
