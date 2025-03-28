@@ -14,6 +14,7 @@ namespace Work1
     public partial class AgendaSummary : Form
     {
         private Main _Main;
+        private bool isSwapped = false; // ตัวแปรสถานะ
         public AgendaSummary()
         {
             InitializeComponent();
@@ -252,13 +253,14 @@ namespace Work1
                 {
                     conn.Open();
                     string query = @"
-                SELECT HeaderID,
-                       AgendaNumber,
-                       AgendaTitle,
-                       qShareTotal,
-                       peopleCountTotal
-                FROM HeaderTemplate
-                ORDER BY HeaderID";
+            SELECT HeaderID,
+                   AgendaNumber,
+                   AgendaTitle,
+                   AgendaType,
+                   qShareTotal,
+                   peopleCountTotal
+            FROM HeaderTemplate
+            ORDER BY HeaderID";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -288,6 +290,7 @@ namespace Work1
             if (drv != null)
             {
                 int headerID = Convert.ToInt32(drv["HeaderID"]);
+                int agendaType = Convert.ToInt32(drv["AgendaType"]);
                 // เช็คค่า IsAgendaClosed ใน DB
                 using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
@@ -328,6 +331,7 @@ namespace Work1
                             label7.Text = qShareTotal.ToString("N0");
 
                             string selectedAgendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
+                            AdjustControlsForAgendaType(agendaType);
                             LoadVoteResults(selectedAgendaItem);
 
                             CalculateAndDisplayVoteSummary();
@@ -335,6 +339,48 @@ namespace Work1
                     }
                 }
             }
+        }
+        private void AdjustControlsForAgendaType(int agendaType)
+        {
+            if (agendaType == 1 && !isSwapped)
+            {
+                // Swap labels
+                SwapLabels(label23, label21);
+                SwapLabels(label5, label9);
+                SwapLabels(label11, label13);
+
+                // Set label11 to "-"
+                label11.Text = "-";
+
+                isSwapped = true; // ตั้งค่าสถานะเป็น true หลังจากสลับตำแหน่งแล้ว
+            }
+            else if (agendaType == 2 && isSwapped)
+            {
+                // Reset labels to original positions if needed
+                ResetLabels();
+                isSwapped = false; // ตั้งค่าสถานะเป็น false หลังจากรีเซ็ตตำแหน่งแล้ว
+            }
+        }
+
+        private void SwapLabels(Label label1, Label label2)
+        {
+            Point tempLocation = label1.Location;
+            label1.Location = label2.Location;
+            label2.Location = tempLocation;
+        }
+
+        private void ResetLabels()
+        {
+            // Reset labels to their original positions
+            label23.Location = new Point(59, 397);
+            label21.Location = new Point(59, 443);
+            label5.Location = new Point(330, 397);
+            label9.Location = new Point(330, 443);
+            label11.Location = new Point(570, 397);
+            label13.Location = new Point(570, 443);
+
+            // Reset label11 text
+            label11.Text = "0.0000%";
         }
 
         private void CalculateAndDisplayVoteSummary()
@@ -390,23 +436,36 @@ namespace Work1
                     }
                 }
 
-                long adjustedApprove = qShareTotal - (disapprove + abstain + invalidBallot);
+                long adjustedApprove;
+                long totalVotesSum;
+                if (comboBox1.SelectedItem is DataRowView drv && Convert.ToInt32(drv["AgendaType"]) == 1)
+                {
+                    // สำหรับ agendaType == 1
+                    adjustedApprove = qShareTotal - (disapprove + invalidBallot);
+                    label11.Text = "-"; // ตั้งค่าร้อยละของ "งดออกเสียง" เป็น "-"
+                    totalVotesSum = adjustedApprove + disapprove + invalidBallot; // ไม่รวม "งดออกเสียง"
+                }
+                else
+                {
+                    // สำหรับ agendaType อื่นๆ
+                    adjustedApprove = qShareTotal - (disapprove + abstain + invalidBallot);
+                    label11.Text = CalculatePercentage(abstain, qShareTotal);
+                    totalVotesSum = adjustedApprove + disapprove + invalidBallot + abstain;
+                }
 
                 label6.Text = disapprove.ToString("N0");
                 label5.Text = abstain.ToString("N0");
                 label8.Text = invalidBallot.ToString("N0");
                 label7.Text = adjustedApprove.ToString("N0");
 
-                long totalVotesSum = adjustedApprove + disapprove + invalidBallot + abstain;
                 label9.Text = totalVotesSum.ToString("N0");
 
-                label10.Text = CalculatePercentage(disapprove, totalVotesSum);
-                label11.Text = CalculatePercentage(abstain, totalVotesSum);
-                label12.Text = CalculatePercentage(invalidBallot, totalVotesSum);
-                label18.Text = CalculatePercentage(adjustedApprove, totalVotesSum);
+                label10.Text = CalculatePercentage(disapprove, qShareTotal);
+                label12.Text = CalculatePercentage(invalidBallot, qShareTotal);
+                label18.Text = CalculatePercentage(adjustedApprove, qShareTotal);
 
                 // Calculate the sum of percentages
-                double totalPercentage = ParsePercentage(label18.Text) + ParsePercentage(label10.Text) + ParsePercentage(label12.Text) + ParsePercentage(label11.Text);
+                double totalPercentage = ParsePercentage(label18.Text) + ParsePercentage(label10.Text) + ParsePercentage(label12.Text) + (label11.Text == "-" ? 0 : ParsePercentage(label11.Text));
                 label13.Text = $"{totalPercentage:F2}%";
             }
             catch (Exception ex)
@@ -414,16 +473,15 @@ namespace Work1
                 MessageBox.Show("เกิดข้อผิดพลาดขณะคำนวณคะแนน: " + ex.Message);
             }
         }
-
         private long ParseLabelToLong(string text)
         {
-            string[] parts = text.Split(' ');
-            if (parts.Length > 0)
+            if (text.EndsWith("%"))
             {
-                if (long.TryParse(parts[0].Replace(",", ""), out long result))
-                {
-                    return result;
-                }
+                text = text.Substring(0, text.Length - 1);
+            }
+            if (double.TryParse(text, out double result))
+            {
+                return (long)result; // Explicitly cast double to long
             }
             return 0;
         }
