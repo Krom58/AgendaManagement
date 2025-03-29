@@ -235,12 +235,12 @@ namespace Work1
 
                 if (attendChoice == "มาเอง")
                 {
-                    // สร้าง Identifier สำหรับตาราง SelfRegistration (รูปแบบ A1, A2, ...)
-                    string identifier = GetNextIdentifier(conn, "SelfRegistration", "B");
+                    // ใช้ Person Id และ prefix "B" (หรือปรับตามที่คุณต้องการ)
+                    string identifier = GetIdentifierFromPersonId(Id, "B");
 
                     string insertQuery = @"
-                INSERT INTO SelfRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
-                VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
+                        INSERT INTO SelfRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
+                        VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
                     using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
                     {
                         cmd.Parameters.AddWithValue("@Identifier", identifier);
@@ -254,12 +254,12 @@ namespace Work1
                 }
                 else if (attendChoice == "มอบฉันทะ")
                 {
-                    // สร้าง Identifier สำหรับตาราง ProxyRegistration (รูปแบบ B1, B2, ...)
-                    string identifier = GetNextIdentifier(conn, "ProxyRegistration", "P");
+                    // ใช้ Person Id และ prefix "P"
+                    string identifier = GetIdentifierFromPersonId(Id, "P");
 
                     string insertQuery = @"
-                INSERT INTO ProxyRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
-                VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
+                        INSERT INTO ProxyRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
+                        VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
                     using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
                     {
                         cmd.Parameters.AddWithValue("@Identifier", identifier);
@@ -271,46 +271,12 @@ namespace Work1
                         cmd.ExecuteNonQuery();
                     }
                 }
+
             }
         }
-        private string GetNextIdentifier(SqlConnection conn, string tableName, string prefix)
+        private string GetIdentifierFromPersonId(int personId, string prefix)
         {
-            // ดึงค่า Identifier ที่มีอยู่ในตารางที่มี prefix ที่ระบุ
-            string query = $"SELECT Identifier FROM {tableName} WHERE Identifier LIKE @prefixPattern";
-            using (SqlCommand cmd = new SqlCommand(query, conn))
-            {
-                cmd.Parameters.AddWithValue("@prefixPattern", prefix + "%");
-                List<int> numbers = new List<int>();
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        string identifier = reader["Identifier"].ToString();
-                        // สมมุติว่า Identifier มีรูปแบบ เช่น P1, P2, P3...
-                        if (identifier.Length > 1 && int.TryParse(identifier.Substring(1), out int num))
-                        {
-                            numbers.Add(num);
-                        }
-                    }
-                }
-                // ถ้ายังไม่มีข้อมูล ให้ return ค่าตัวแรก
-                if (numbers.Count == 0)
-                    return prefix + "1";
-
-                // เรียงลำดับตัวเลขที่มีอยู่
-                numbers.Sort();
-
-                // หาเลขที่หายไป (เล็กสุดที่ไม่มีอยู่ในชุด)
-                int nextNumber = 1;
-                foreach (int num in numbers)
-                {
-                    if (num == nextNumber)
-                        nextNumber++;
-                    else if (num > nextNumber)
-                        break;
-                }
-                return prefix + nextNumber.ToString();
-            }
+            return prefix + personId.ToString();
         }
 
         private void Reprint_Click(object sender, EventArgs e)
