@@ -54,6 +54,7 @@ namespace Work1
             {
                 printDoc.Print();
                 MessageBox.Show("พิมพ์สำเร็จ");
+                this.Close(); // ปิดฟอร์ม PrintAgenda
             }
             catch (Exception ex)
             {
@@ -66,7 +67,7 @@ namespace Work1
             e.Graphics.PageUnit = GraphicsUnit.Millimeter;
 
             float columnWidth = 107.45f;
-            float rowHeight = 69.7f;
+            float rowHeight = 71f;
             int rows = 4;
             int cols = 2;
 
@@ -87,10 +88,12 @@ namespace Work1
             int maxIndex = cellTexts.Count; // จำนวนข้อความที่แท้จริง
 
             // กำหนดตัวแปร StringFormat สำหรับการจัดวางข้อความ
-            StringFormat sf = new StringFormat();
-            sf.Alignment = StringAlignment.Near;
-            sf.LineAlignment = StringAlignment.Center;
-
+            StringFormat sf = new StringFormat
+            {
+                Alignment = StringAlignment.Near,
+                LineAlignment = StringAlignment.Center
+            };
+            sf.FormatFlags |= StringFormatFlags.NoClip;
             float indent = 7.5f;
 
             // บันทึกค่า currentIndex เริ่มต้นของหน้าปัจจุบัน เพื่อใช้ตรวจสอบว่าหน้านี้พิมพ์อะไรไปหรือไม่
@@ -107,15 +110,20 @@ namespace Work1
                     float x = col * columnWidth;
                     float y = row * rowHeight;
                     RectangleF rect = new RectangleF(x, y, columnWidth, rowHeight);
-                    RectangleF textRect = new RectangleF(rect.X + indent, rect.Y, rect.Width - indent, rect.Height);
 
                     using (System.Drawing.Font font = new System.Drawing.Font("Angsana New", 12))
                     {
+                        SizeF textSize = e.Graphics.MeasureString(cellTexts[currentIndex], font, (int)rect.Width, sf);
+                        // ตรวจสอบว่าความสูงที่วัดได้เกิน rowHeight หรือไม่
+                        float usedRowHeight = Math.Max(rowHeight, textSize.Height);
+                        RectangleF textRect = new RectangleF(rect.X + indent, rect.Y, rect.Width - indent, usedRowHeight);
+
                         e.Graphics.DrawString(cellTexts[currentIndex], font, Brushes.Black, textRect, sf);
                     }
 
                     currentIndex++;
                 }
+
                 if (currentIndex >= maxIndex)
                     break;
             }
@@ -228,7 +236,7 @@ namespace Work1
                             documentTemplate.AppendLine("   [  ] เห็นด้วย           [  ] ไม่เห็นด้วย         [  ] งดออกเสียง");
                             documentTemplate.AppendLine("     (Approved)         (Disapproved)     (Abstained)");
                             documentTemplate.AppendLine("");
-                            documentTemplate.AppendLine("ลงชื่อ __________________ ผู้ถือหุ้น");
+                            documentTemplate.AppendLine("ลงชื่อ ____________________________ ผู้ถือหุ้น/มอบฉันทะ");
                             documentTemplate.Append("-----------------------------------------------------");
                         }
                         richTextBoxTemplate.Text = documentTemplate.ToString().Trim();

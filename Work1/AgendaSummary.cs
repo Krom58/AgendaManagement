@@ -300,7 +300,7 @@ namespace Work1
                     {
                         cmd.Parameters.AddWithValue("@HeaderID", headerID);
                         object result = cmd.ExecuteScalar();
-                        if (result != null && result != DBNull.Value)
+                        /*if (result != null && result != DBNull.Value)
                         {
                             bool isClosed = Convert.ToBoolean(result);
                             if (isClosed)
@@ -313,7 +313,7 @@ namespace Work1
                                 // ถ้าวาระยังไม่ปิด ให้เปิดปุ่มและคอนโทรล
                                 EnableAgendaControls();
                             }
-                        }
+                        }*/
                         if (drv != null)
                         {
                             DataTable dt = comboBox1.DataSource as DataTable;
@@ -510,8 +510,8 @@ namespace Work1
             if (comboBox1.SelectedValue == null) return;
 
             // ถามผู้ใช้ว่ามั่นใจที่จะจบวาระหรือไม่
-            DialogResult confirmResult = MessageBox.Show(
-                "คุณแน่ใจหรือไม่ที่จะจบวาระนี้? เมื่อจบแล้วจะไม่สามารถแก้ไขข้อมูลได้อีก",
+                DialogResult confirmResult = MessageBox.Show(
+                "คุณแน่ใจหรือไม่ที่จะจบวาระนี้?",
                 "ยืนยันการจบวาระ",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -532,7 +532,7 @@ namespace Work1
             }
 
             // ปิดปุ่มและคอนโทรล
-            DisableAgendaControls();
+            //DisableAgendaControls();
 
             MessageBox.Show("บันทึกสำเร็จ");
         }
