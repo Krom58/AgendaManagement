@@ -13,24 +13,42 @@ namespace AgendaDetail
 {
     public partial class AgendaDetail : Form
     {
-        private bool isSwapped = false; // ตัวแปรสถานะ
+        private bool isSwapped = false; // ตัวแปรสถานะสำหรับการสลับ label (AgendaType 1)
+        private DataTable dtHeaders;    // DataTable สำหรับเก็บข้อมูลวาระ (HeaderTemplate)
+        private int currentAgendaIndex = 0; // ดัชนีวาระที่เลือกอยู่
+        private Timer refreshTimer; // Timer สำหรับรีเฟรชฟอร์ม
+
         public AgendaDetail()
         {
             InitializeComponent();
-            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
+            InitializeTimer(); // เรียกใช้การตั้งค่า Timer
+        }
+
+        private void InitializeTimer()
+        {
+            refreshTimer = new Timer();
+            refreshTimer.Interval = 3000; // ตั้งค่าให้ Timer ทำงานทุกๆ 3 วินาที (3000 มิลลิวินาที)
+            refreshTimer.Tick += new EventHandler(RefreshTimer_Tick);
+            refreshTimer.Start(); // เริ่มการทำงานของ Timer
+        }
+
+        private void RefreshTimer_Tick(object sender, EventArgs e)
+        {
+            UpdateAgendaDisplay(); // เรียกใช้ฟังก์ชันเพื่อรีเฟรชข้อมูลในฟอร์ม
         }
 
         private void AgendaDetail_Load(object sender, EventArgs e)
         {
-            LoadHeaderTemplateData();
-            LoadPeopleCountTotal();
+            LoadHeaderDataForNavigation(); // โหลดข้อมูลวาระจาก DB ลงใน dtHeaders
+            LoadPeopleCountTotal(); // โหลดข้อมูลจำนวนคนรวมจาก RegistrationSummary
 
-            if (comboBox1.Items.Count > 0)
+            if (dtHeaders != null && dtHeaders.Rows.Count > 0)
             {
-                comboBox1.SelectedIndex = 0;
-                comboBox1_SelectedIndexChanged(comboBox1, EventArgs.Empty);
+                currentAgendaIndex = 0;
+                UpdateAgendaDisplay();
             }
         }
+
         private void LoadPeopleCountTotal()
         {
             try
@@ -51,7 +69,8 @@ namespace AgendaDetail
                 MessageBox.Show("เกิดข้อผิดพลาด: " + ex.Message);
             }
         }
-        private void LoadHeaderTemplateData()
+
+        private void LoadHeaderDataForNavigation()
         {
             try
             {
@@ -59,74 +78,25 @@ namespace AgendaDetail
                 {
                     conn.Open();
                     string query = @"
-            SELECT HeaderID,
-                   AgendaNumber,
-                   AgendaTitle,
-                   AgendaType,
-                   qShareTotal,
-                   peopleCountTotal
-            FROM HeaderTemplate
-            ORDER BY HeaderID";
-
+                        SELECT HeaderID, AgendaNumber, AgendaTitle, AgendaType, qShareTotal, peopleCountTotal
+                        FROM HeaderTemplate
+                        ORDER BY HeaderID";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-
-                        dt.Columns.Add("AgendaDisplay", typeof(string),
-                            "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
-
-                        comboBox1.DataSource = dt;
-                        comboBox1.DisplayMember = "AgendaDisplay";
-                        comboBox1.ValueMember = "HeaderID";
+                        dtHeaders = new DataTable();
+                        adapter.Fill(dtHeaders);
+                        // เพิ่มคอลัมน์ AgendaDisplay
+                        dtHeaders.Columns.Add("AgendaDisplay", typeof(string), "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("เกิดข้อผิดพลาด: " + ex.Message);
+                MessageBox.Show("เกิดข้อผิดพลาดในการโหลดข้อมูลวาระ: " + ex.Message);
             }
         }
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (comboBox1.SelectedValue == null) return;
-            DataRowView drv = comboBox1.SelectedItem as DataRowView;
-            if (drv != null)
-            {
-                int headerID = Convert.ToInt32(drv["HeaderID"]);
-                int agendaType = Convert.ToInt32(drv["AgendaType"]);
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
-                {
-                    conn.Open();
-                    string checkQuery = "SELECT IsAgendaClosed FROM HeaderTemplate WHERE HeaderID = @HeaderID";
-                    using (SqlCommand cmd = new SqlCommand(checkQuery, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@HeaderID", headerID);
-                        if (drv != null)
-                        {
-                            DataTable dt = comboBox1.DataSource as DataTable;
-                            if (dt == null) return;
 
-                            DataRow[] rows = dt.Select($"HeaderID = {headerID}");
-                            if (rows.Length == 0) return;
-
-                            long qShareTotal = rows[0]["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(rows[0]["qShareTotal"]);
-                            int peopleCountTotal = rows[0]["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(rows[0]["peopleCountTotal"]);
-
-                            label15.Text = qShareTotal.ToString("N0");
-                            label17.Text = peopleCountTotal.ToString();
-
-                            label7.Text = qShareTotal.ToString("N0");
-
-                            string selectedAgendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
-                            AdjustControlsForAgendaType(agendaType);
-                            CalculateAndDisplayVoteSummary();
-                        }
-                    }
-                }
-            }
-        }
         private void AdjustControlsForAgendaType(int agendaType)
         {
             if (agendaType == 1 && !isSwapped)
@@ -155,19 +125,19 @@ namespace AgendaDetail
 
         private void ResetLabels()
         {
-            label23.Location = new Point(623, 533);
-            label21.Location = new Point(623, 579);
-            label5.Location = new Point(894, 533);
-            label9.Location = new Point(894, 579);
-            label11.Location = new Point(1134, 533);
-            label13.Location = new Point(1134, 579);
+            label23.Location = new Point(642, 645);
+            label21.Location = new Point(642, 691);
+            label5.Location = new Point(913, 645);
+            label9.Location = new Point(913, 691);
+            label11.Location = new Point(1153, 645);
+            label13.Location = new Point(1153, 691);
 
             label11.Text = "0.0000%";
         }
 
         private void CalculateAndDisplayVoteSummary()
         {
-            string agendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
+            string agendaItem = HeaderLabel.Text; // ใช้ TextBox1 เป็นหัวข้อวาระ
             if (string.IsNullOrEmpty(agendaItem))
             {
                 MessageBox.Show("กรุณาเลือกวาระ");
@@ -182,16 +152,14 @@ namespace AgendaDetail
                 using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
                     conn.Open();
-
                     string voteQuery = @"
-            SELECT VoteType, SUM(ShareCount) AS TotalShareCount
-            FROM VoteResults
-            WHERE AgendaItem = @AgendaItem
-            GROUP BY VoteType";
+                        SELECT VoteType, SUM(ShareCount) AS TotalShareCount
+                        FROM VoteResults
+                        WHERE AgendaItem = @AgendaItem
+                        GROUP BY VoteType";
                     using (SqlCommand voteCmd = new SqlCommand(voteQuery, conn))
                     {
                         voteCmd.Parameters.AddWithValue("@AgendaItem", agendaItem);
-
                         using (SqlDataReader reader = voteCmd.ExecuteReader())
                         {
                             while (reader.Read())
@@ -211,7 +179,6 @@ namespace AgendaDetail
                                         invalidBallot += shareCount;
                                         break;
                                 }
-
                                 totalVotes += shareCount;
                             }
                         }
@@ -220,7 +187,8 @@ namespace AgendaDetail
 
                 long adjustedApprove;
                 long totalVotesSum;
-                if (comboBox1.SelectedItem is DataRowView drv && Convert.ToInt32(drv["AgendaType"]) == 1)
+                // ถ้า AgendaType = 1 (แบบที่ไม่รวมงดออกเสียงในการคำนวณ)
+                if (dtHeaders.Rows[currentAgendaIndex]["AgendaType"].ToString() == "1")
                 {
                     adjustedApprove = qShareTotal - (disapprove + invalidBallot);
                     label11.Text = "-";
@@ -237,7 +205,6 @@ namespace AgendaDetail
                 label5.Text = abstain.ToString("N0");
                 label8.Text = invalidBallot.ToString("N0");
                 label7.Text = adjustedApprove.ToString("N0");
-
                 label9.Text = totalVotesSum.ToString("N0");
 
                 label10.Text = CalculatePercentage(disapprove, qShareTotal);
@@ -283,6 +250,62 @@ namespace AgendaDetail
                 return result;
             }
             return 0;
+        }
+
+        private void btnBack_Click(object sender, EventArgs e)
+        {
+            if (dtHeaders == null || dtHeaders.Rows.Count == 0)
+                return;
+            if (currentAgendaIndex > 0)
+            {
+                currentAgendaIndex--;
+                UpdateAgendaDisplay();
+            }
+            else
+            {
+                MessageBox.Show("นี่คือวาระแรกแล้ว");
+            }
+        }
+
+        private void btnNext_Click(object sender, EventArgs e)
+        {
+            if (dtHeaders == null || dtHeaders.Rows.Count == 0)
+                return;
+            if (currentAgendaIndex < dtHeaders.Rows.Count - 1)
+            {
+                currentAgendaIndex++;
+                UpdateAgendaDisplay();
+            }
+            else
+            {
+                MessageBox.Show("นี่คือวาระสุดท้ายแล้ว");
+            }
+        }
+
+        private void UpdateAgendaDisplay()
+        {
+            if (dtHeaders == null || dtHeaders.Rows.Count == 0)
+                return;
+            DataRow currentRow = dtHeaders.Rows[currentAgendaIndex];
+
+            // นำ AgendaDisplay ไปแสดงใน TextBox1
+            HeaderLabel.Text = currentRow["AgendaDisplay"].ToString();
+
+            // อ่านค่า AgendaType, qShareTotal และ peopleCountTotal จาก DataRow
+            int agendaType = Convert.ToInt32(currentRow["AgendaType"]);
+            long qShareTotal = currentRow["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(currentRow["qShareTotal"]);
+            int peopleCountTotal = currentRow["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(currentRow["peopleCountTotal"]);
+
+            // อัปเดต label ที่เกี่ยวข้อง
+            label15.Text = qShareTotal.ToString("N0");
+            label17.Text = peopleCountTotal.ToString();
+            label7.Text = qShareTotal.ToString("N0");
+
+            // ปรับตำแหน่ง label ตาม AgendaType
+            AdjustControlsForAgendaType(agendaType);
+
+            // เรียกคำนวณและแสดงผลคะแนน (ใช้ฟังก์ชันเดิม)
+            CalculateAndDisplayVoteSummary();
         }
     }
 }

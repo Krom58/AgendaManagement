@@ -236,9 +236,36 @@ namespace Work1
                             documentTemplate.AppendLine("   [  ] เห็นด้วย           [  ] ไม่เห็นด้วย         [  ] งดออกเสียง");
                             documentTemplate.AppendLine("     (Approved)         (Disapproved)     (Abstained)");
                             documentTemplate.AppendLine("");
-                            documentTemplate.AppendLine("ลงชื่อ ____________________________ ผู้ถือหุ้น/มอบฉันทะ");
+                            // ตรวจสอบค่า attendChoice และแสดงข้อความที่เหมาะสม
+                            if (attendChoice == "มาเอง")
+                            {
+                                documentTemplate.AppendLine("ลงชื่อ ____________________________ ผู้ถือหุ้น");
+                            }
+                            else if (attendChoice == "มอบฉันทะ")
+                            {
+                                documentTemplate.AppendLine("ลงชื่อ ____________________________ ผู้รับมอบฉันทะ");
+                            }
                             documentTemplate.Append("-----------------------------------------------------");
                         }
+                        // 3.2) **เพิ่มคูปองรับอาหารว่างเป็นบล็อกสุดท้ายเสมอ** 
+                        documentTemplate.AppendLine();
+                        documentTemplate.AppendLine($"บริษัท เอเชียโฮเต็ล จำกัด (มหาชน)     {identifier}");
+                        documentTemplate.AppendLine("คูปองรับอาหารว่าง");
+                        documentTemplate.AppendLine($"ชื่อ: {fullName}");
+                        documentTemplate.AppendLine($"จำนวนหุ้น: {q_share} หุ้น");
+                        documentTemplate.AppendLine();
+                        // ตรวจสอบค่า attendChoice และแสดงข้อความที่เหมาะสม
+                        if (attendChoice == "มาเอง")
+                        {
+                            documentTemplate.AppendLine("ลงชื่อ ____________________________ ผู้ถือหุ้น");
+                        }
+                        else if (attendChoice == "มอบฉันทะ")
+                        {
+                            documentTemplate.AppendLine("ลงชื่อ ____________________________ ผู้รับมอบฉันทะ");
+                        }
+                        // จะใส่เส้นแบ่งหรือไม่ก็ได้
+                        documentTemplate.Append("-----------------------------------------------------");
+
                         richTextBoxTemplate.Text = documentTemplate.ToString().Trim();
                     }
                 }
