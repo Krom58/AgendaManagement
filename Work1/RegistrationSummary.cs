@@ -129,6 +129,15 @@ namespace Work1
             }
 
             MessageBox.Show("บันทึกข้อมูลสรุปเรียบร้อย");
+            // Store the currently selected value
+            var selectedValue = comboBox1.SelectedValue;
+
+            // Refresh the form
+            LoadHeaderTemplateData();
+            UpdatePreviewTable();
+
+            // Restore the selected value
+            comboBox1.SelectedValue = selectedValue;
         }
 
         private void UpdatePreviewTable()
@@ -312,6 +321,42 @@ namespace Work1
             if (comboBox1.SelectedValue == null) return;
 
             UpdatePreviewTable();
+            int headerID = 0;
+            if (comboBox1.SelectedValue is DataRowView)
+            {
+                DataRowView drv = (DataRowView)comboBox1.SelectedValue;
+                headerID = Convert.ToInt32(drv["HeaderID"]);
+            }
+            else
+            {
+                headerID = Convert.ToInt32(comboBox1.SelectedValue);
+            }
+
+            if (headerID == 0)
+            {
+                btnCalculateAndSave.BackColor = System.Drawing.Color.LightCoral; // เปลี่ยนสีปุ่มเป็นสีแดงเมื่อเลือก "ผู้ลงทะเบียนทั้งหมด"
+                return;
+            }
+
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            {
+                conn.Open();
+                string checkQuery = "SELECT COUNT(*) FROM HeaderTemplate WHERE HeaderID = @HeaderID AND IsRegistered = 'บันทึกแล้ว'";
+                using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                {
+                    checkCmd.Parameters.AddWithValue("@HeaderID", headerID);
+                    int count = (int)checkCmd.ExecuteScalar();
+
+                    if (count > 0)
+                    {
+                        btnCalculateAndSave.BackColor = System.Drawing.Color.LightCoral; // เปลี่ยนสีปุ่มเป็นสีแดงเมื่อวาระได้บันทึกไปแล้ว
+                    }
+                    else
+                    {
+                        btnCalculateAndSave.BackColor = System.Drawing.Color.LightGreen; // เปลี่ยนสีปุ่มเป็นสีเขียวเมื่อสามารถบันทึกได้
+                    }
+                }
+            }
         }
 
         private bool LoadSummaryDataFromHeaderTemplate(out int peopleCountSelf, out int peopleCountProxy, out long qShareSelf, out long qShareProxy, out int peopleCountTotal, out long qShareTotal)

@@ -285,6 +285,20 @@ namespace Work1
 
         private void comboBox1_SelectedIndexChanged_1(object sender, EventArgs e)
         {
+            /*if (result != null && result != DBNull.Value)
+                        {
+                            bool isClosed = Convert.ToBoolean(result);
+                            if (isClosed)
+                            {
+                                // ถ้าวาระปิดแล้ว ให้ปิดปุ่มและคอนโทรลที่เกี่ยวข้อง
+                                DisableAgendaControls();
+                            }
+                            else
+                            {
+                                // ถ้าวาระยังไม่ปิด ให้เปิดปุ่มและคอนโทรล
+                                EnableAgendaControls();
+                            }
+                        }*/
             if (comboBox1.SelectedValue == null) return;
             DataRowView drv = comboBox1.SelectedItem as DataRowView;
             if (drv != null)
@@ -300,42 +314,41 @@ namespace Work1
                     {
                         cmd.Parameters.AddWithValue("@HeaderID", headerID);
                         object result = cmd.ExecuteScalar();
-                        /*if (result != null && result != DBNull.Value)
+                        if (result != null && result != DBNull.Value)
                         {
-                            bool isClosed = Convert.ToBoolean(result);
-                            if (isClosed)
+                            bool isAgendaClosed = Convert.ToBoolean(result);
+                            if (isAgendaClosed)
                             {
-                                // ถ้าวาระปิดแล้ว ให้ปิดปุ่มและคอนโทรลที่เกี่ยวข้อง
-                                DisableAgendaControls();
+                                btnEndAgenda.BackColor = Color.LightCoral; // เปลี่ยนสีปุ่มเป็นสีแดงเมื่อวาระได้บันทึกไปแล้ว
                             }
                             else
                             {
-                                // ถ้าวาระยังไม่ปิด ให้เปิดปุ่มและคอนโทรล
-                                EnableAgendaControls();
+                                btnEndAgenda.BackColor = Color.LightGreen; // เปลี่ยนสีปุ่มเป็นสีเขียวเมื่อสามารถบันทึกได้
                             }
-                        }*/
-                        if (drv != null)
-                        {
-                            DataTable dt = comboBox1.DataSource as DataTable;
-                            if (dt == null) return;
-
-                            DataRow[] rows = dt.Select($"HeaderID = {headerID}");
-                            if (rows.Length == 0) return;
-
-                            long qShareTotal = rows[0]["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(rows[0]["qShareTotal"]);
-                            int peopleCountTotal = rows[0]["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(rows[0]["peopleCountTotal"]);
-
-                            label15.Text = qShareTotal.ToString("N0");
-                            label17.Text = peopleCountTotal.ToString();
-
-                            label7.Text = qShareTotal.ToString("N0");
-
-                            string selectedAgendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
-                            AdjustControlsForAgendaType(agendaType);
-                            LoadVoteResults(selectedAgendaItem);
-
-                            CalculateAndDisplayVoteSummary();
                         }
+                    }
+
+                    if (drv != null)
+                    {
+                        DataTable dt = comboBox1.DataSource as DataTable;
+                        if (dt == null) return;
+
+                        DataRow[] rows = dt.Select($"HeaderID = {headerID}");
+                        if (rows.Length == 0) return;
+
+                        long qShareTotal = rows[0]["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(rows[0]["qShareTotal"]);
+                        int peopleCountTotal = rows[0]["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(rows[0]["peopleCountTotal"]);
+
+                        label15.Text = qShareTotal.ToString("N0");
+                        label17.Text = peopleCountTotal.ToString();
+
+                        label7.Text = qShareTotal.ToString("N0");
+
+                        string selectedAgendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
+                        AdjustControlsForAgendaType(agendaType);
+                        LoadVoteResults(selectedAgendaItem);
+
+                        CalculateAndDisplayVoteSummary();
                     }
                 }
             }
@@ -535,6 +548,14 @@ namespace Work1
             //DisableAgendaControls();
 
             MessageBox.Show("บันทึกสำเร็จ");
+            // Store the currently selected value
+            var selectedValue = comboBox1.SelectedValue;
+
+            // Refresh the form
+            LoadHeaderTemplateData();
+
+            // Restore the selected value
+            comboBox1.SelectedValue = selectedValue;
         }
         private void DisableAgendaControls()
         {
@@ -558,6 +579,63 @@ namespace Work1
             txtSearchIdentifier.Enabled = true;
             dataGridViewRegistration.ReadOnly = false;
             dataGridView8.ReadOnly = false;
+        }
+
+        private void BtnDelete_Click(object sender, EventArgs e)
+        {
+            if (dataGridView8.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("กรุณาเลือกแถวที่ต้องการลบ");
+                return;
+            }
+
+            DialogResult confirmResult = MessageBox.Show(
+                "คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?",
+                "ยืนยันการลบ",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirmResult == DialogResult.No)
+                return;
+
+            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            {
+                conn.Open();
+
+                foreach (DataGridViewRow row in dataGridView8.SelectedRows)
+                {
+                    if (!row.IsNewRow)
+                    {
+                        string agendaItem = row.Cells["AgendaItem"].Value.ToString();
+                        string identifier = row.Cells["Identifier"].Value.ToString();
+                        string fullName = row.Cells["FullName"].Value.ToString();
+
+                        string deleteQuery = @"
+                DELETE FROM VoteResults 
+                WHERE AgendaItem = @AgendaItem AND Identifier = @Identifier AND FullName = @FullName";
+
+                        using (SqlCommand cmd = new SqlCommand(deleteQuery, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@AgendaItem", agendaItem);
+                            cmd.Parameters.AddWithValue("@Identifier", identifier);
+                            cmd.Parameters.AddWithValue("@FullName", fullName);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        dataGridView8.Rows.Remove(row);
+                    }
+                }
+            }
+
+            MessageBox.Show("ลบข้อมูลเรียบร้อยแล้ว");
+            // Store the currently selected value
+            var selectedValue = comboBox1.SelectedValue;
+
+            // Refresh the form
+            LoadHeaderTemplateData();
+
+            // Restore the selected value
+            comboBox1.SelectedValue = selectedValue;
         }
     }
 }

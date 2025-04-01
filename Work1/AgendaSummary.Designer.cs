@@ -70,6 +70,7 @@
             this.btnAbstain = new System.Windows.Forms.Button();
             this.dataGridView8 = new System.Windows.Forms.DataGridView();
             this.btnEndAgenda = new System.Windows.Forms.Button();
+            this.BtnDelete = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView6)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView7)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView9)).BeginInit();
@@ -499,19 +500,31 @@
             // btnEndAgenda
             // 
             this.btnEndAgenda.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnEndAgenda.Location = new System.Drawing.Point(1322, 261);
+            this.btnEndAgenda.Location = new System.Drawing.Point(1313, 164);
             this.btnEndAgenda.Name = "btnEndAgenda";
-            this.btnEndAgenda.Size = new System.Drawing.Size(150, 75);
+            this.btnEndAgenda.Size = new System.Drawing.Size(159, 75);
             this.btnEndAgenda.TabIndex = 116;
             this.btnEndAgenda.Text = "จบวาระ";
             this.btnEndAgenda.UseVisualStyleBackColor = true;
             this.btnEndAgenda.Click += new System.EventHandler(this.btnEndAgenda_Click);
+            // 
+            // BtnDelete
+            // 
+            this.BtnDelete.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BtnDelete.Location = new System.Drawing.Point(1313, 377);
+            this.BtnDelete.Name = "BtnDelete";
+            this.BtnDelete.Size = new System.Drawing.Size(159, 75);
+            this.BtnDelete.TabIndex = 117;
+            this.BtnDelete.Text = "ลบบัตรลงคะแนน";
+            this.BtnDelete.UseVisualStyleBackColor = true;
+            this.BtnDelete.Click += new System.EventHandler(this.BtnDelete_Click);
             // 
             // AgendaSummary
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1484, 711);
+            this.Controls.Add(this.BtnDelete);
             this.Controls.Add(this.btnEndAgenda);
             this.Controls.Add(this.dataGridView8);
             this.Controls.Add(this.btnAbstain);
@@ -617,5 +630,6 @@
         private System.Windows.Forms.Button btnAbstain;
         private System.Windows.Forms.DataGridView dataGridView8;
         private System.Windows.Forms.Button btnEndAgenda;
+        private System.Windows.Forms.Button BtnDelete;
     }
 }

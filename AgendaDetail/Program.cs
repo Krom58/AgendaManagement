@@ -16,7 +16,7 @@ namespace AgendaDetail
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new AgendaDetail());
+            Application.Run(new RegisterationDetail());
         }
     }
 }
