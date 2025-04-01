@@ -125,12 +125,12 @@ namespace AgendaDetail
 
         private void ResetLabels()
         {
-            label23.Location = new Point(642, 645);
-            label21.Location = new Point(642, 691);
-            label5.Location = new Point(913, 645);
-            label9.Location = new Point(913, 691);
-            label11.Location = new Point(1153, 645);
-            label13.Location = new Point(1153, 691);
+            label23.Location = new Point(527, 708);
+            label21.Location = new Point(527, 790);
+            label5.Location = new Point(876, 708);
+            label9.Location = new Point(876, 790);
+            label11.Location = new Point(1176, 708);
+            label13.Location = new Point(1176, 790);
 
             label11.Text = "0.0000%";
         }

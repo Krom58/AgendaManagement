@@ -33,6 +33,13 @@ namespace Work1
 
         private void btnCalculateAndSave_Click(object sender, EventArgs e)
         {
+            // หากเลือก “ผู้ลงทะเบียนทั้งหมด” (HeaderID == 0) ให้แสดงข้อความและไม่บันทึก
+            if (Convert.ToInt32(comboBox1.SelectedValue) == 0)
+            {
+                MessageBox.Show("ไม่สามารถบันทึกข้อมูลได้");
+                return;
+            }
+
             UpdatePreviewTable();
 
             int peopleCountSelf = int.Parse(label7.Text);
@@ -232,54 +239,71 @@ namespace Work1
             LoadHeaderTemplateData();
             UpdatePreviewTable();
         }
+
+        // ปรับปรุงให้ combobox มีรายการแรกเป็น “ผู้ลงทะเบียนทั้งหมด”
         private void LoadHeaderTemplateData()
         {
             try
             {
+                DataTable dt = new DataTable();
+                dt.Columns.Add("HeaderID", typeof(int));
+                dt.Columns.Add("AgendaNumber", typeof(string));
+                dt.Columns.Add("AgendaTitle", typeof(string));
+                dt.Columns.Add("AgendaDisplay", typeof(string));
+
+                // เพิ่มรายการ “ผู้ลงทะเบียนทั้งหมด” โดยกำหนด HeaderID เป็น 0
+                DataRow dr = dt.NewRow();
+                dr["HeaderID"] = 0;
+                dr["AgendaNumber"] = "";
+                dr["AgendaTitle"] = "ผู้ลงทะเบียนทั้งหมด";
+                dr["AgendaDisplay"] = "ผู้ลงทะเบียนทั้งหมด";
+                dt.Rows.Add(dr);
+
                 using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
                     conn.Open();
-
                     string checkQuery = "SELECT COUNT(*) FROM HeaderTemplate";
                     using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
                     {
                         int count = (int)checkCmd.ExecuteScalar();
-
                         if (count > 0)
                         {
                             string query = "SELECT HeaderID, AgendaNumber, AgendaTitle FROM HeaderTemplate ORDER BY HeaderID";
-                            LoadComboBoxData(query, conn);
+                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            {
+                                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                                DataTable dtData = new DataTable();
+                                adapter.Fill(dtData);
+                                foreach (DataRow row in dtData.Rows)
+                                {
+                                    DataRow newRow = dt.NewRow();
+                                    newRow["HeaderID"] = row["HeaderID"];
+                                    newRow["AgendaNumber"] = row["AgendaNumber"];
+                                    newRow["AgendaTitle"] = row["AgendaTitle"];
+                                    newRow["AgendaDisplay"] = "วาระที่ " + row["AgendaNumber"] + " - " + row["AgendaTitle"];
+                                    dt.Rows.Add(newRow);
+                                }
+                            }
                         }
                         else
                         {
-                            string query = @"
-                        SELECT DISTINCT 
-                            0 AS HeaderID,
-                            'N/A' AS AgendaNumber,
-                            'ข้อมูลจาก Self และ Proxy' AS AgendaTitle";
-                            LoadComboBoxData(query, conn);
+                            // กรณีไม่มีข้อมูลใน HeaderTemplate
+                            DataRow newRow = dt.NewRow();
+                            newRow["HeaderID"] = 0;
+                            newRow["AgendaNumber"] = "N/A";
+                            newRow["AgendaTitle"] = "ข้อมูลจาก Self และ Proxy";
+                            newRow["AgendaDisplay"] = "ข้อมูลจาก Self และ Proxy";
+                            dt.Rows.Add(newRow);
                         }
                     }
                 }
+                comboBox1.DataSource = dt;
+                comboBox1.DisplayMember = "AgendaDisplay";
+                comboBox1.ValueMember = "HeaderID";
             }
             catch (Exception ex)
             {
                 MessageBox.Show("เกิดข้อผิดพลาด: " + ex.Message);
-            }
-        }
-        private void LoadComboBoxData(string query, SqlConnection conn)
-        {
-            using (SqlCommand cmd = new SqlCommand(query, conn))
-            {
-                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                adapter.Fill(dt);
-
-                dt.Columns.Add("AgendaDisplay", typeof(string), "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
-
-                comboBox1.DataSource = dt;
-                comboBox1.DisplayMember = "AgendaDisplay";
-                comboBox1.ValueMember = "HeaderID";
             }
         }
 
@@ -289,21 +313,31 @@ namespace Work1
 
             UpdatePreviewTable();
         }
+
         private bool LoadSummaryDataFromHeaderTemplate(out int peopleCountSelf, out int peopleCountProxy, out long qShareSelf, out long qShareProxy, out int peopleCountTotal, out long qShareTotal)
         {
             peopleCountSelf = peopleCountProxy = peopleCountTotal = 0;
             qShareSelf = qShareProxy = qShareTotal = 0;
             bool dataFound = false;
 
+            int headerID = 0;
+            if (comboBox1.SelectedValue is DataRowView)
+            {
+                DataRowView drv = (DataRowView)comboBox1.SelectedValue;
+                headerID = Convert.ToInt32(drv["HeaderID"]);
+            }
+            else
+            {
+                headerID = Convert.ToInt32(comboBox1.SelectedValue);
+            }
+
+            // หากเลือก “ผู้ลงทะเบียนทั้งหมด” (HeaderID = 0) ให้ดึงข้อมูลคำนวณจากตารางอื่น
+            if (headerID == 0)
+                return false;
+
             using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
             {
                 conn.Open();
-                DataRowView drv = comboBox1.SelectedItem as DataRowView;
-                if (drv == null)
-                    return false;
-
-                int headerID = Convert.ToInt32(drv["HeaderID"]);
-
                 string query = @"
         SELECT PeopleCountTotal, qShareTotal, PeopleCount_Self, PeopleCount_Proxy, QShare_Self, QShare_Proxy
         FROM HeaderTemplate
@@ -334,4 +368,3 @@ namespace Work1
         }
     }
 }
-
