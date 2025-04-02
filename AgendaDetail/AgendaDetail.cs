@@ -59,8 +59,16 @@ namespace AgendaDetail
                     string query = "SELECT PeopleCount_Total FROM RegistrationSummary";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        int peopleCountTotal = (int)cmd.ExecuteScalar();
-                        label7.Text = peopleCountTotal.ToString();
+                        object result = cmd.ExecuteScalar();
+                        if (result != null && result != DBNull.Value)
+                        {
+                            int peopleCountTotal = (int)result;
+                            label7.Text = peopleCountTotal.ToString();
+                        }
+                        else
+                        {
+                            label7.Text = "No data available"; // Default label text when no data is found
+                        }
                     }
                 }
             }
@@ -263,7 +271,10 @@ namespace AgendaDetail
             }
             else
             {
-                MessageBox.Show("นี่คือวาระแรกแล้ว");
+                // Navigate to the RegiterationDetail page
+                this.Hide();
+                RegisterationDetail regDetail = new RegisterationDetail();
+                regDetail.Show();
             }
         }
 
