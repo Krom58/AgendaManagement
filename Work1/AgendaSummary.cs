@@ -54,8 +54,16 @@ namespace Work1
                     string query = "SELECT PeopleCount_Total FROM RegistrationSummary";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        int peopleCountTotal = (int)cmd.ExecuteScalar();
-                        label7.Text = peopleCountTotal.ToString();
+                        var result = cmd.ExecuteScalar();
+                        if (result != null)
+                        {
+                            int peopleCountTotal = (int)result;
+                            label7.Text = peopleCountTotal.ToString();
+                        }
+                        else
+                        {
+                            label7.Text = "0"; // or handle the null case appropriately
+                        }
                     }
                 }
             }

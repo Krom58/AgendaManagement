@@ -15,6 +15,7 @@ namespace AgendaDetail
 {
     public partial class RegisterationDetail : Form
     {
+        private Timer refreshTimer; // Add a Timer
         public RegisterationDetail()
         {
             InitializeComponent();
@@ -23,6 +24,19 @@ namespace AgendaDetail
         private void RegisterationDetail_Load(object sender, EventArgs e)
         {
             LoadRegistrationData();
+            InitializeTimer();
+        }
+        private void InitializeTimer()
+        {
+            refreshTimer = new Timer();
+            refreshTimer.Interval = 3000; // Set the interval to 3 seconds
+            refreshTimer.Tick += new EventHandler(RefreshTimer_Tick);
+            refreshTimer.Start(); // Start the timer
+        }
+
+        private void RefreshTimer_Tick(object sender, EventArgs e)
+        {
+            LoadRegistrationData(); // Refresh the data
         }
         private void LoadRegistrationData()
         {
