@@ -87,6 +87,11 @@ namespace Work1
                         DataTable dt = new DataTable();
                         adapter.Fill(dt);
                         dataGridView.DataSource = dt;
+                        dataGridView.Columns["n_title"].HeaderText = "คำนำหน้า";
+                        dataGridView.Columns["n_first"].HeaderText = "ชื่อ";
+                        dataGridView.Columns["n_last"].HeaderText = "นามสกุล";
+                        dataGridView.Columns["q_share"].HeaderText = "หุ้น";
+                        dataGridView.Columns["i_ref"].HeaderText = "รหัสบัตรประชาชน";
                         dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
                         dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
                         dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
@@ -183,7 +188,11 @@ namespace Work1
                     DataTable dt = new DataTable();
                     adapter.Fill(dt);
                     dataGridView.DataSource = dt;
-
+                    dataGridView.Columns["n_title"].HeaderText = "คำนำหน้า";
+                    dataGridView.Columns["n_first"].HeaderText = "ชื่อ";
+                    dataGridView.Columns["n_last"].HeaderText = "นามสกุล";
+                    dataGridView.Columns["q_share"].HeaderText = "หุ้น";
+                    dataGridView.Columns["i_ref"].HeaderText = "รหัสบัตรประชาชน";
                     dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
                     dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
                     dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
