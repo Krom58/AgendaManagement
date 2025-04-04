@@ -9,18 +9,19 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 using Microsoft.VisualBasic;
-
+using ThaiNationalIDCard;
 namespace Work1
 {
     public partial class CheckDB: Form
     {
+        private ThaiIDCard idcard;
         public CheckDB()
         {
             InitializeComponent();
         }
         private void CheckDB_Load(object sender, EventArgs e)
         {
-
+            idcard = new ThaiIDCard();
         }
 
         private Main _Main;
@@ -86,28 +87,32 @@ namespace Work1
                         SqlDataAdapter adapter = new SqlDataAdapter(cmd);
                         DataTable dt = new DataTable();
                         adapter.Fill(dt);
-                        dataGridView.DataSource = dt;
-                        dataGridView.Columns["n_title"].HeaderText = "คำนำหน้า";
-                        dataGridView.Columns["n_first"].HeaderText = "ชื่อ";
-                        dataGridView.Columns["n_last"].HeaderText = "นามสกุล";
-                        dataGridView.Columns["q_share"].HeaderText = "หุ้น";
-                        dataGridView.Columns["i_ref"].HeaderText = "รหัสบัตรประชาชน";
-                        dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
-                        dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
-                        dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
-                        dataGridView.Columns["q_share"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-                        dataGridView.Columns["i_ref"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                        dataGridView.Columns["SelfCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                        dataGridView.Columns["ProxyCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                        dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-                        // ซ่อนคอลัมน์ Id
-                        dataGridView.Columns["Id"].Visible = false;
-                        dataGridView.Columns["RegStatus"].Visible = false;
-                        foreach (DataGridViewColumn col in dataGridView.Columns)
-                        {
-                            col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                        }
 
+                        // Use Invoke to update the dataGridView on the UI thread
+                        dataGridView.Invoke((MethodInvoker)delegate
+                        {
+                            dataGridView.DataSource = dt;
+                            dataGridView.Columns["n_title"].HeaderText = "คำนำหน้า";
+                            dataGridView.Columns["n_first"].HeaderText = "ชื่อ";
+                            dataGridView.Columns["n_last"].HeaderText = "นามสกุล";
+                            dataGridView.Columns["q_share"].HeaderText = "หุ้น";
+                            dataGridView.Columns["i_ref"].HeaderText = "รหัสบัตรประชาชน";
+                            dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
+                            dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
+                            dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
+                            dataGridView.Columns["q_share"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                            dataGridView.Columns["i_ref"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                            dataGridView.Columns["SelfCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                            dataGridView.Columns["ProxyCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                            dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                            // ซ่อนคอลัมน์ Id
+                            dataGridView.Columns["Id"].Visible = false;
+                            dataGridView.Columns["RegStatus"].Visible = false;
+                            foreach (DataGridViewColumn col in dataGridView.Columns)
+                            {
+                                col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                            }
+                        });
                     }
                 }
             }
@@ -428,6 +433,131 @@ namespace Work1
                     PrintAgenda printForm = new PrintAgenda(personId, attendChoice);
                     printForm.Show();
                 }
+            }
+        }
+
+        private void chkBoxMonitor_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkBoxMonitor.Checked)
+            {
+                if (cbxReaderList.SelectedItem == null)
+                {
+                    MessageBox.Show("No reader select to monitoring.");
+                    chkBoxMonitor.Checked = false;
+                    return;
+                }
+                idcard.MonitorStart(cbxReaderList.SelectedItem.ToString());
+                idcard.eventCardInsertedWithPhoto += new handleCardInserted(CardInserted);
+                idcard.eventPhotoProgress += new handlePhotoProgress(photoProgress);
+
+            }
+            else
+            {
+                if (cbxReaderList.SelectedItem != null)
+                    idcard.MonitorStop(cbxReaderList.SelectedItem.ToString());
+            }
+        }
+        public void CardInserted(Personal personal)
+        {
+            if (personal == null)
+            {
+                if (idcard.ErrorCode() > 0)
+                {
+                    MessageBox.Show(idcard.Error());
+                }
+                return;
+            }
+
+            textBox3.BeginInvoke(new MethodInvoker(delegate { textBox3.Text = personal.Citizenid; }));
+            textBox1.BeginInvoke(new MethodInvoker(delegate { textBox1.Text = personal.Th_Firstname; }));
+            textBox2.BeginInvoke(new MethodInvoker(delegate { textBox2.Text = personal.Th_Lastname; }));
+            SearchButton_Click(this, EventArgs.Empty); // Trigger search after card insertion
+        }
+
+        private void btnRead_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Refresh();
+                Personal personal = idcard.readAll();
+                if (personal != null)
+                {
+                    textBox3.Text = personal.Citizenid;
+                    textBox1.Text = personal.Th_Firstname;
+                    textBox2.Text = personal.Th_Lastname;
+                    SearchButton_Click(sender, e); // Trigger search after reading card
+                }
+                else if (idcard.ErrorCode() > 0)
+                {
+                    MessageBox.Show(idcard.Error());
+                }
+                else
+                {
+                    MessageBox.Show("Catch all");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void btnRefreshReaderList_Click(object sender, EventArgs e)
+        {
+            cbxReaderList.Items.Clear();
+            cbxReaderList.SelectedIndex = -1;
+            cbxReaderList.SelectedText = String.Empty;
+            cbxReaderList.Text = string.Empty;
+            cbxReaderList.Refresh();
+
+            try
+            {
+                ThaiIDCard idcard = new ThaiIDCard();
+                string[] readers = idcard.GetReaders();
+
+                if (readers == null) return;
+
+                foreach (string r in readers)
+                {
+                    cbxReaderList.Items.Add(r);
+                }
+
+                // Automatically select the first item if there are any items
+                if (cbxReaderList.Items.Count > 0)
+                {
+                    cbxReaderList.SelectedIndex = 0;
+                }
+
+                cbxReaderList.DroppedDown = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+        private void photoProgress(int value, int maximum)
+        {
+            if (textBox1.InvokeRequired)
+            {
+                if (PhotoProgressBar1.Maximum != maximum)
+                    PhotoProgressBar1.BeginInvoke(new MethodInvoker(delegate { PhotoProgressBar1.Maximum = maximum; }));
+
+                // fix progress bar sync.
+                if (PhotoProgressBar1.Maximum > value)
+                    PhotoProgressBar1.BeginInvoke(new MethodInvoker(delegate { PhotoProgressBar1.Value = value + 1; }));
+
+                PhotoProgressBar1.BeginInvoke(new MethodInvoker(delegate { PhotoProgressBar1.Value = value; }));
+            }
+            else
+            {
+                if (PhotoProgressBar1.Maximum != maximum)
+                    PhotoProgressBar1.Maximum = maximum;
+
+                // fix progress bar sync.
+                if (PhotoProgressBar1.Maximum > value)
+                    PhotoProgressBar1.Value = value + 1;
+
+                PhotoProgressBar1.Value = value;
             }
         }
     }

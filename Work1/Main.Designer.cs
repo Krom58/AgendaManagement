@@ -38,6 +38,7 @@
             // 
             // ImportExcel
             // 
+            this.ImportExcel.Enabled = false;
             this.ImportExcel.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ImportExcel.Location = new System.Drawing.Point(12, 12);
             this.ImportExcel.Name = "ImportExcel";
@@ -60,6 +61,7 @@
             // 
             // Agenda
             // 
+            this.Agenda.Enabled = false;
             this.Agenda.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Agenda.Location = new System.Drawing.Point(572, 12);
             this.Agenda.Name = "Agenda";

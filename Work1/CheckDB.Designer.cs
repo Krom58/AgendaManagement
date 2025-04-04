@@ -40,6 +40,11 @@
             this.dataGridView = new System.Windows.Forms.DataGridView();
             this.Reprint = new System.Windows.Forms.Button();
             this.btnReregister = new System.Windows.Forms.Button();
+            this.btnRefreshReaderList = new System.Windows.Forms.Button();
+            this.chkBoxMonitor = new System.Windows.Forms.CheckBox();
+            this.cbxReaderList = new System.Windows.Forms.ComboBox();
+            this.btnRead = new System.Windows.Forms.Button();
+            this.PhotoProgressBar1 = new System.Windows.Forms.ProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
             this.SuspendLayout();
             // 
@@ -141,7 +146,7 @@
             // Reprint
             // 
             this.Reprint.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Reprint.Location = new System.Drawing.Point(1147, 145);
+            this.Reprint.Location = new System.Drawing.Point(198, 145);
             this.Reprint.Name = "Reprint";
             this.Reprint.Size = new System.Drawing.Size(150, 50);
             this.Reprint.TabIndex = 15;
@@ -152,7 +157,7 @@
             // btnReregister
             // 
             this.btnReregister.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnReregister.Location = new System.Drawing.Point(961, 145);
+            this.btnReregister.Location = new System.Drawing.Point(12, 145);
             this.btnReregister.Name = "btnReregister";
             this.btnReregister.Size = new System.Drawing.Size(161, 50);
             this.btnReregister.TabIndex = 16;
@@ -160,11 +165,67 @@
             this.btnReregister.UseVisualStyleBackColor = true;
             this.btnReregister.Click += new System.EventHandler(this.btnReregister_Click);
             // 
+            // btnRefreshReaderList
+            // 
+            this.btnRefreshReaderList.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnRefreshReaderList.Location = new System.Drawing.Point(421, 11);
+            this.btnRefreshReaderList.Name = "btnRefreshReaderList";
+            this.btnRefreshReaderList.Size = new System.Drawing.Size(143, 37);
+            this.btnRefreshReaderList.TabIndex = 17;
+            this.btnRefreshReaderList.Text = "ค้นหาเครื่องอ่านบัตร";
+            this.btnRefreshReaderList.UseVisualStyleBackColor = true;
+            this.btnRefreshReaderList.Click += new System.EventHandler(this.btnRefreshReaderList_Click);
+            // 
+            // chkBoxMonitor
+            // 
+            this.chkBoxMonitor.AutoSize = true;
+            this.chkBoxMonitor.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chkBoxMonitor.Location = new System.Drawing.Point(589, 14);
+            this.chkBoxMonitor.Name = "chkBoxMonitor";
+            this.chkBoxMonitor.Size = new System.Drawing.Size(129, 33);
+            this.chkBoxMonitor.TabIndex = 18;
+            this.chkBoxMonitor.Text = "อ่านบัตรอัตโนมัติ";
+            this.chkBoxMonitor.UseVisualStyleBackColor = true;
+            this.chkBoxMonitor.CheckedChanged += new System.EventHandler(this.chkBoxMonitor_CheckedChanged);
+            // 
+            // cbxReaderList
+            // 
+            this.cbxReaderList.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cbxReaderList.FormattingEnabled = true;
+            this.cbxReaderList.Location = new System.Drawing.Point(20, 12);
+            this.cbxReaderList.Name = "cbxReaderList";
+            this.cbxReaderList.Size = new System.Drawing.Size(395, 37);
+            this.cbxReaderList.TabIndex = 19;
+            // 
+            // btnRead
+            // 
+            this.btnRead.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnRead.Location = new System.Drawing.Point(734, 12);
+            this.btnRead.Name = "btnRead";
+            this.btnRead.Size = new System.Drawing.Size(143, 37);
+            this.btnRead.TabIndex = 20;
+            this.btnRead.Text = "อ่านบัตร";
+            this.btnRead.UseVisualStyleBackColor = true;
+            this.btnRead.Click += new System.EventHandler(this.btnRead_Click);
+            // 
+            // PhotoProgressBar1
+            // 
+            this.PhotoProgressBar1.Location = new System.Drawing.Point(916, 14);
+            this.PhotoProgressBar1.MarqueeAnimationSpeed = 0;
+            this.PhotoProgressBar1.Name = "PhotoProgressBar1";
+            this.PhotoProgressBar1.Size = new System.Drawing.Size(381, 34);
+            this.PhotoProgressBar1.TabIndex = 53;
+            // 
             // CheckDB
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1484, 711);
+            this.Controls.Add(this.PhotoProgressBar1);
+            this.Controls.Add(this.btnRead);
+            this.Controls.Add(this.cbxReaderList);
+            this.Controls.Add(this.chkBoxMonitor);
+            this.Controls.Add(this.btnRefreshReaderList);
             this.Controls.Add(this.btnReregister);
             this.Controls.Add(this.Reprint);
             this.Controls.Add(this.dataGridView);
@@ -201,5 +262,10 @@
         private System.Windows.Forms.DataGridView dataGridView;
         private System.Windows.Forms.Button Reprint;
         private System.Windows.Forms.Button btnReregister;
+        private System.Windows.Forms.Button btnRefreshReaderList;
+        private System.Windows.Forms.CheckBox chkBoxMonitor;
+        private System.Windows.Forms.ComboBox cbxReaderList;
+        private System.Windows.Forms.Button btnRead;
+        private System.Windows.Forms.ProgressBar PhotoProgressBar1;
     }
 }
