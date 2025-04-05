@@ -18,10 +18,16 @@ namespace Work1
         public CheckDB()
         {
             InitializeComponent();
+            // Set DropDownStyle to DropDownList to make ComboBox non-editable
+            cbxReaderList.DropDownStyle = ComboBoxStyle.DropDownList;
+            // Set DrawMode to OwnerDrawFixed to handle custom drawing
+            cbxReaderList.DrawMode = DrawMode.OwnerDrawFixed;
+            cbxReaderList.DrawItem += new DrawItemEventHandler(cbxReaderList_DrawItem);
         }
         private void CheckDB_Load(object sender, EventArgs e)
         {
-            idcard = new ThaiIDCard();
+            idcard = new ThaiIDCard(); 
+            btnRefreshReaderList_Click(sender, e); // Add this line to search for card readers on form load
         }
 
         private Main _Main;
@@ -559,6 +565,26 @@ namespace Work1
 
                 PhotoProgressBar1.Value = value;
             }
+        }
+
+        private void cbxReaderList_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            if (e.Index < 0) return;
+
+            ComboBox comboBox = (ComboBox)sender;
+            string text = comboBox.Items[e.Index].ToString();
+
+            // Draw the background of the item.
+            e.DrawBackground();
+
+            // Draw the text of the item.
+            using (Brush brush = new SolidBrush(e.ForeColor))
+            {
+                e.Graphics.DrawString(text, e.Font, brush, e.Bounds);
+            }
+
+            // Draw the focus rectangle if the mouse hovers over an item.
+            e.DrawFocusRectangle();
         }
     }
 }

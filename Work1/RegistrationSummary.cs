@@ -18,6 +18,11 @@ namespace Work1
         public RegistrationSummary()
         {
             InitializeComponent();
+            // Set DropDownStyle to DropDownList to make ComboBox non-editable
+            comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
+            // Set DrawMode to OwnerDrawFixed to handle custom drawing
+            comboBox1.DrawMode = DrawMode.OwnerDrawFixed;
+            comboBox1.DrawItem += new DrawItemEventHandler(comboBox1_DrawItem);
         }
         public RegistrationSummary(Main main)
         {
@@ -410,6 +415,26 @@ namespace Work1
                 }
             }
             return dataFound;
+        }
+
+        private void comboBox1_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            if (e.Index < 0) return;
+
+            ComboBox comboBox = (ComboBox)sender;
+            string text = comboBox.Items[e.Index].ToString();
+
+            // Draw the background of the item.
+            e.DrawBackground();
+
+            // Draw the text of the item.
+            using (Brush brush = new SolidBrush(e.ForeColor))
+            {
+                e.Graphics.DrawString(text, e.Font, brush, e.Bounds);
+            }
+
+            // Draw the focus rectangle if the mouse hovers over an item.
+            e.DrawFocusRectangle();
         }
     }
 }

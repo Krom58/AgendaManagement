@@ -190,12 +190,14 @@
             // 
             // cbxReaderList
             // 
+            this.cbxReaderList.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxReaderList.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbxReaderList.FormattingEnabled = true;
             this.cbxReaderList.Location = new System.Drawing.Point(20, 12);
             this.cbxReaderList.Name = "cbxReaderList";
             this.cbxReaderList.Size = new System.Drawing.Size(395, 37);
             this.cbxReaderList.TabIndex = 19;
+            this.cbxReaderList.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.cbxReaderList_DrawItem);
             // 
             // btnRead
             // 
