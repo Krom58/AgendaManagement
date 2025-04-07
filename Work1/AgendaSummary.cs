@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
+using ClosedXML.Excel;
 
 namespace Work1
 {
@@ -669,6 +670,169 @@ namespace Work1
 
             // Draw the focus rectangle if the mouse hovers over an item.
             e.DrawFocusRectangle();
+        }
+
+        private void btnexportExcel_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (var workbook = new XLWorkbook())
+                {
+                    // Get the selected item text from ComboBox
+                    string selectedItem = comboBox1.GetItemText(comboBox1.SelectedItem);
+
+                    // Extract the "วาระที่" and the number from the selected item
+                    string worksheetName = selectedItem.Split(' ')[1];
+
+                    // Create the main worksheet for the agenda
+                    var mainWorksheet = workbook.Worksheets.Add("วาระที่ " + worksheetName);
+
+                    // Set the header from ComboBox
+                    mainWorksheet.Cell(1, 1).Value = selectedItem;
+
+                    // Set the table headers
+                    mainWorksheet.Cell(3, 1).Value = "รายการ";
+                    mainWorksheet.Cell(3, 2).Value = "จำนวนเสียง";
+                    mainWorksheet.Cell(3, 3).Value = "ร้อยละ (%)";
+
+                    // Define labels and their corresponding values
+                    var labels = new (string, string, string)[]
+                    {
+                ("เห็นด้วย (Approved)", label7.Text, label18.Text),
+                ("ไม่เห็นด้วย (Disapproved)", label6.Text, label10.Text),
+                ("บัตรเสีย (Invalid ballots)", label8.Text, label12.Text),
+                ("งดออกเสียง (Abstained)", label5.Text, label11.Text),
+                ("รวม", label9.Text, label13.Text)
+                    };
+
+                    // Check the selected agenda type and adjust labels if needed
+                    if (comboBox1.SelectedItem is DataRowView drv)
+                    {
+                        int agendaType = Convert.ToInt32(drv["AgendaType"]);
+                        if (agendaType == 1)
+                        {
+                            // Swap labels for agendaType 1
+                            labels = new (string, string, string)[]
+                            {
+                        ("เห็นด้วย (Approved)", label7.Text, label18.Text),
+                        ("ไม่เห็นด้วย (Disapproved)", label6.Text, label10.Text),
+                        ("บัตรเสีย (Invalid ballots)", label8.Text, label12.Text),
+                        ("รวม", label9.Text, label13.Text),
+                        ("งดออกเสียง (Abstained)", label5.Text, "-")
+                            };
+                        }
+                        else if (agendaType == 2)
+                        {
+                            // Reset labels for other agenda types
+                            labels = new (string, string, string)[]
+                            {
+                        ("เห็นด้วย (Approved)", label7.Text, label18.Text),
+                        ("ไม่เห็นด้วย (Disapproved)", label6.Text, label10.Text),
+                        ("บัตรเสีย (Invalid ballots)", label8.Text, label12.Text),
+                        ("งดออกเสียง (Abstained)", label5.Text, label11.Text),
+                        ("รวม", label9.Text, label13.Text)
+                            };
+                        }
+                    }
+
+                    // Set the labels
+                    for (int i = 0; i < labels.Length; i++)
+                    {
+                        mainWorksheet.Cell(4 + i, 1).Value = labels[i].Item1;
+                        mainWorksheet.Cell(4 + i, 2).Value = labels[i].Item2;
+                        mainWorksheet.Cell(4 + i, 3).Value = labels[i].Item3;
+                    }
+
+                    mainWorksheet.Cell(10, 1).Value = "จำนวนหุ้นผู้เข้าประชุมทั้งหมด";
+                    mainWorksheet.Cell(10, 3).Value = label15.Text;
+
+                    mainWorksheet.Cell(11, 1).Value = "จำนวนคนผู้เข้าประชุม";
+                    mainWorksheet.Cell(11, 3).Value = label17.Text;
+
+                    // Set font size and font family
+                    var range = mainWorksheet.RangeUsed();
+                    range.Style.Font.FontSize = 24;
+                    range.Style.Font.FontName = "Angsana New";
+
+                    // Center align specific cells
+                    mainWorksheet.Cell(3, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    mainWorksheet.Cell(3, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    mainWorksheet.Cell(3, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                    mainWorksheet.Cell(4, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(4, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(5, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(5, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(6, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(6, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(7, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(7, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(8, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(8, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(10, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    mainWorksheet.Cell(11, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+                    // ปรับความกว้างของคอลัมน์ให้พอดีกับตัวอักษร ยกเว้นเซลล์ (1,1)
+                    // เก็บค่าในเซลล์ (1,1) แล้วล้างออกชั่วคราว
+                    var headerValue = mainWorksheet.Cell(1, 1).Value;
+                    mainWorksheet.Cell(1, 1).Value = "";
+
+                    // ปรับความกว้างของคอลัมน์ 1 โดยไม่คำนึงถึงเซลล์ (1,1)
+                    mainWorksheet.Column(1).AdjustToContents();
+
+                    // คืนค่าของเซลล์ (1,1) กลับมา
+                    mainWorksheet.Cell(1, 1).Value = headerValue;
+
+                    // ปรับความกว้างของคอลัมน์ที่ 2 และ 3 ตามตัวอักษร
+                    mainWorksheet.Columns(2, 3).AdjustToContents();
+
+                    // Define sections for each vote type
+                    var voteTypes = new[] { "ไม่เห็นด้วย", "บัตรเสีย", "งดออกเสียง" };
+                    foreach (var voteType in voteTypes)
+                    {
+                        var worksheet = workbook.Worksheets.Add(voteType);
+
+                        // Export data from dataGridView8 to Excel
+                        int startRow = 1 ; // Starting row for dataGridView8 data
+
+                        // Set headers for each section
+                        for (int i = 0; i < dataGridView8.Columns.Count; i++)
+                        {
+                            worksheet.Cell(startRow, i + 1).Value = dataGridView8.Columns[i].HeaderText;
+                        }
+                        startRow++;
+
+                        // Add data for each vote type
+                        foreach (DataGridViewRow row in dataGridView8.Rows)
+                        {
+                            if (row.Cells["VoteType"].Value?.ToString() == voteType)
+                            {
+                                for (int j = 0; j < dataGridView8.Columns.Count; j++)
+                                {
+                                    worksheet.Cell(startRow, j + 1).Value = row.Cells[j].Value?.ToString();
+                                }
+                                startRow++;
+                            }
+                        }
+                        range = worksheet.RangeUsed();
+                        range.Style.Font.FontSize = 24;
+                        range.Style.Font.FontName = "Angsana New";
+                        worksheet.Columns().AdjustToContents();
+                        range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                        range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                    }
+
+                    // Save the workbook with the ComboBox selected item as the filename
+                    string filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\" + selectedItem + ".xlsx";
+                    workbook.SaveAs(filePath);
+
+                    MessageBox.Show("Exported successfully to " + filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
         }
     }
 }

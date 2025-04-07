@@ -28,6 +28,7 @@ namespace Work1
         {
             idcard = new ThaiIDCard(); 
             btnRefreshReaderList_Click(sender, e); // Add this line to search for card readers on form load
+            chkBoxMonitor.Checked = true; // Add this line to check the checkbox on form load
         }
 
         private Main _Main;

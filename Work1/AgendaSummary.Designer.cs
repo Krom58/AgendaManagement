@@ -71,6 +71,7 @@
             this.dataGridView8 = new System.Windows.Forms.DataGridView();
             this.btnEndAgenda = new System.Windows.Forms.Button();
             this.BtnDelete = new System.Windows.Forms.Button();
+            this.btnexportExcel = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView6)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView7)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView9)).BeginInit();
@@ -502,7 +503,7 @@
             // btnEndAgenda
             // 
             this.btnEndAgenda.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnEndAgenda.Location = new System.Drawing.Point(1313, 164);
+            this.btnEndAgenda.Location = new System.Drawing.Point(1313, 122);
             this.btnEndAgenda.Name = "btnEndAgenda";
             this.btnEndAgenda.Size = new System.Drawing.Size(159, 75);
             this.btnEndAgenda.TabIndex = 116;
@@ -521,11 +522,23 @@
             this.BtnDelete.UseVisualStyleBackColor = true;
             this.BtnDelete.Click += new System.EventHandler(this.BtnDelete_Click);
             // 
+            // btnexportExcel
+            // 
+            this.btnexportExcel.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnexportExcel.Location = new System.Drawing.Point(1313, 251);
+            this.btnexportExcel.Name = "btnexportExcel";
+            this.btnexportExcel.Size = new System.Drawing.Size(159, 75);
+            this.btnexportExcel.TabIndex = 118;
+            this.btnexportExcel.Text = "ทำ Excel";
+            this.btnexportExcel.UseVisualStyleBackColor = true;
+            this.btnexportExcel.Click += new System.EventHandler(this.btnexportExcel_Click);
+            // 
             // AgendaSummary
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1484, 711);
+            this.Controls.Add(this.btnexportExcel);
             this.Controls.Add(this.BtnDelete);
             this.Controls.Add(this.btnEndAgenda);
             this.Controls.Add(this.dataGridView8);
@@ -633,5 +646,6 @@
         private System.Windows.Forms.DataGridView dataGridView8;
         private System.Windows.Forms.Button btnEndAgenda;
         private System.Windows.Forms.Button BtnDelete;
+        private System.Windows.Forms.Button btnexportExcel;
     }
 }
