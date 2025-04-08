@@ -41,6 +41,7 @@
             this.lblProxyCount = new System.Windows.Forms.Label();
             this.btnLoadSelf = new System.Windows.Forms.Button();
             this.btnLoadProxy = new System.Windows.Forms.Button();
+            this.btnexportExcel = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRegistration)).BeginInit();
             this.SuspendLayout();
             // 
@@ -171,11 +172,23 @@
             this.btnLoadProxy.UseVisualStyleBackColor = true;
             this.btnLoadProxy.Click += new System.EventHandler(this.btnLoadProxy_Click);
             // 
+            // btnexportExcel
+            // 
+            this.btnexportExcel.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnexportExcel.Location = new System.Drawing.Point(1322, 106);
+            this.btnexportExcel.Name = "btnexportExcel";
+            this.btnexportExcel.Size = new System.Drawing.Size(150, 75);
+            this.btnexportExcel.TabIndex = 119;
+            this.btnexportExcel.Text = "ทำ Excel";
+            this.btnexportExcel.UseVisualStyleBackColor = true;
+            this.btnexportExcel.Click += new System.EventHandler(this.btnexportExcel_Click);
+            // 
             // RegistrationViewer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1484, 711);
+            this.Controls.Add(this.btnexportExcel);
             this.Controls.Add(this.btnLoadProxy);
             this.Controls.Add(this.btnLoadSelf);
             this.Controls.Add(this.lblProxyCount);
@@ -214,5 +227,6 @@
         private System.Windows.Forms.Label lblProxyCount;
         private System.Windows.Forms.Button btnLoadSelf;
         private System.Windows.Forms.Button btnLoadProxy;
+        private System.Windows.Forms.Button btnexportExcel;
     }
 }

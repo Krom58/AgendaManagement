@@ -12,7 +12,7 @@ using Microsoft.VisualBasic;
 using ThaiNationalIDCard;
 namespace Work1
 {
-    public partial class CheckDB: Form
+    public partial class CheckDB : Form
     {
         private ThaiIDCard idcard;
         public CheckDB()
@@ -26,7 +26,7 @@ namespace Work1
         }
         private void CheckDB_Load(object sender, EventArgs e)
         {
-            idcard = new ThaiIDCard(); 
+            idcard = new ThaiIDCard();
             btnRefreshReaderList_Click(sender, e); // Add this line to search for card readers on form load
             chkBoxMonitor.Checked = true; // Add this line to check the checkbox on form load
         }
@@ -466,19 +466,26 @@ namespace Work1
         }
         public void CardInserted(Personal personal)
         {
-            if (personal == null)
+            try
             {
-                if (idcard.ErrorCode() > 0)
+                if (personal == null)
                 {
-                    MessageBox.Show(idcard.Error());
+                    if (idcard.ErrorCode() > 0)
+                    {
+                        MessageBox.Show(idcard.Error());
+                    }
+                    return;
                 }
-                return;
-            }
 
-            textBox3.BeginInvoke(new MethodInvoker(delegate { textBox3.Text = personal.Citizenid; }));
-            textBox1.BeginInvoke(new MethodInvoker(delegate { textBox1.Text = personal.Th_Firstname; }));
-            textBox2.BeginInvoke(new MethodInvoker(delegate { textBox2.Text = personal.Th_Lastname; }));
-            SearchButton_Click(this, EventArgs.Empty); // Trigger search after card insertion
+                textBox3.BeginInvoke(new MethodInvoker(() => { textBox3.Text = personal.Citizenid; }));
+                textBox1.BeginInvoke(new MethodInvoker(() => { textBox1.Text = personal.Th_Firstname; }));
+                textBox2.BeginInvoke(new MethodInvoker(() => { textBox2.Text = personal.Th_Lastname; }));
+                this.BeginInvoke(new MethodInvoker(() => { SearchButton_Click(this, EventArgs.Empty); }));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error in CardInserted: " + ex.Message);
+            }
         }
 
         private void btnRead_Click(object sender, EventArgs e)
