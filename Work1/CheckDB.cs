@@ -474,8 +474,15 @@ namespace Work1
                     {
                         MessageBox.Show(idcard.Error());
                     }
+                    else
+                    {
+                        MessageBox.Show("No card detected.");
+                    }
                     return;
                 }
+
+                // Clear old data
+                ClearOldData();
 
                 textBox3.BeginInvoke(new MethodInvoker(() => { textBox3.Text = personal.Citizenid; }));
                 textBox1.BeginInvoke(new MethodInvoker(() => { textBox1.Text = personal.Th_Firstname; }));
@@ -492,7 +499,9 @@ namespace Work1
         {
             try
             {
-                Refresh();
+                // Clear old data
+                ClearOldData();
+
                 Personal personal = idcard.readAll();
                 if (personal != null)
                 {
@@ -507,7 +516,7 @@ namespace Work1
                 }
                 else
                 {
-                    MessageBox.Show("Catch all");
+                    MessageBox.Show("No card detected.");
                 }
             }
             catch (Exception ex)
@@ -593,6 +602,17 @@ namespace Work1
 
             // Draw the focus rectangle if the mouse hovers over an item.
             e.DrawFocusRectangle();
+        }
+        private void ClearOldData()
+        {
+            // Clear TextBoxes
+            textBox1.Text = string.Empty;
+            textBox2.Text = string.Empty;
+            textBox3.Text = string.Empty;
+
+            // Clear DataGridView
+            dataGridView.DataSource = null;
+            dataGridView.Rows.Clear();
         }
     }
 }

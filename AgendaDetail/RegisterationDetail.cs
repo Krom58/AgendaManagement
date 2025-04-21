@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Reflection.Emit;
@@ -19,12 +20,12 @@ namespace AgendaDetail
         public RegisterationDetail()
         {
             InitializeComponent();
+            InitializeTimer();
         }
 
         private void RegisterationDetail_Load(object sender, EventArgs e)
         {
             LoadRegistrationData();
-            InitializeTimer();
         }
         private void InitializeTimer()
         {
@@ -63,6 +64,9 @@ namespace AgendaDetail
                         }
                     }
 
+                    // Debug output
+                    Debug.WriteLine($"SelfRegistration - PeopleCount: {peopleCountSelf}, ShareCount: {shareCountSelf}");
+
                     // Load data from ProxyRegistration
                     string queryProxy = "SELECT COUNT(*) AS PeopleCount, SUM(CONVERT(BIGINT, ShareCount)) AS ShareCount FROM ProxyRegistration";
                     using (SqlCommand cmd = new SqlCommand(queryProxy, conn))
@@ -77,12 +81,18 @@ namespace AgendaDetail
                         }
                     }
 
+                    // Debug output
+                    Debug.WriteLine($"ProxyRegistration - PeopleCount: {peopleCountProxy}, ShareCount: {shareCountProxy}");
+
                     // Load total shares from PersonData
                     string queryTotalShares = "SELECT SUM(CONVERT(BIGINT, q_share)) AS TotalShares FROM PersonData";
                     using (SqlCommand cmd = new SqlCommand(queryTotalShares, conn))
                     {
                         totalShares = Convert.ToInt64(cmd.ExecuteScalar() ?? 0);
                     }
+
+                    // Debug output
+                    Debug.WriteLine($"PersonData - TotalShares: {totalShares}");
                 }
 
                 // Set label texts
@@ -103,12 +113,16 @@ namespace AgendaDetail
                 label12.Text = percentProxy.ToString("F2") + "%";
                 label15.Text = percentTotal.ToString("F2") + "%";
 
-                // Calculate additional percentages
-                double percentTotalShares = totalShares > 0 ? (double)(shareCountSelf + shareCountProxy) / totalShares * 100 : 0;
-                double percentDifference = percentTotal - percentTotalShares;
+                double qShareTotalValue = double.Parse(label14.Text, System.Globalization.NumberStyles.AllowThousands);
+                double qShareGlobal = double.Parse(label17.Text, System.Globalization.NumberStyles.AllowThousands);
+                double percentQShare = qShareGlobal > 0 ? (qShareTotalValue / qShareGlobal) * 100 : 0;
+                label18.Text = percentQShare.ToString("F2") + "%";
 
-                label18.Text = percentTotalShares.ToString("F2") + "%";
+                double percentDifference = percentTotal - percentQShare;
                 label19.Text = percentDifference.ToString("F2") + "%";
+
+                // Debug output
+                Debug.WriteLine($"Percentages - Self: {percentSelf}%, Proxy: {percentProxy}%, Total: {percentTotal}%");
             }
             catch (Exception ex)
             {
