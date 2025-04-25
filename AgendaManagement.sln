@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaManagement", "Work1\AgendaManagement.csproj", "{EB6C11A6-D708-4FF7-BED2-31DA7FCEC370}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaManagement", "AgendaManagement\AgendaManagement.csproj", "{EB6C11A6-D708-4FF7-BED2-31DA7FCEC370}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaDetail", "AgendaDetail\AgendaDetail.csproj", "{8CBC709D-6B15-4D53-8D39-F58ABF3CDE1A}"
 EndProject
