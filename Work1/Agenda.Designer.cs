@@ -38,6 +38,8 @@
             this.btnSaveHeaderTemplate = new System.Windows.Forms.Button();
             this.dataGridViewTemplate = new System.Windows.Forms.DataGridView();
             this.button1 = new System.Windows.Forms.Button();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.checkBox2 = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewTemplate)).BeginInit();
             this.SuspendLayout();
             // 
@@ -56,7 +58,7 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(28, 49);
+            this.label1.Location = new System.Drawing.Point(42, 39);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(416, 43);
             this.label1.TabIndex = 4;
@@ -65,7 +67,7 @@
             // txtMeetingNumber
             // 
             this.txtMeetingNumber.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtMeetingNumber.Location = new System.Drawing.Point(450, 46);
+            this.txtMeetingNumber.Location = new System.Drawing.Point(464, 36);
             this.txtMeetingNumber.Name = "txtMeetingNumber";
             this.txtMeetingNumber.Size = new System.Drawing.Size(75, 51);
             this.txtMeetingNumber.TabIndex = 10;
@@ -74,7 +76,7 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(28, 150);
+            this.label2.Location = new System.Drawing.Point(42, 144);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(75, 43);
             this.label2.TabIndex = 11;
@@ -83,7 +85,7 @@
             // txtAgendaNumber
             // 
             this.txtAgendaNumber.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtAgendaNumber.Location = new System.Drawing.Point(109, 146);
+            this.txtAgendaNumber.Location = new System.Drawing.Point(123, 141);
             this.txtAgendaNumber.Name = "txtAgendaNumber";
             this.txtAgendaNumber.Size = new System.Drawing.Size(75, 51);
             this.txtAgendaNumber.TabIndex = 12;
@@ -92,7 +94,7 @@
             // 
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(237, 150);
+            this.label3.Location = new System.Drawing.Point(261, 144);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(113, 43);
             this.label3.TabIndex = 13;
@@ -101,7 +103,7 @@
             // txtAgendaTitle
             // 
             this.txtAgendaTitle.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtAgendaTitle.Location = new System.Drawing.Point(356, 146);
+            this.txtAgendaTitle.Location = new System.Drawing.Point(380, 141);
             this.txtAgendaTitle.Name = "txtAgendaTitle";
             this.txtAgendaTitle.Size = new System.Drawing.Size(750, 51);
             this.txtAgendaTitle.TabIndex = 14;
@@ -109,7 +111,7 @@
             // btnSaveHeaderTemplate
             // 
             this.btnSaveHeaderTemplate.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSaveHeaderTemplate.Location = new System.Drawing.Point(1136, 147);
+            this.btnSaveHeaderTemplate.Location = new System.Drawing.Point(1347, 140);
             this.btnSaveHeaderTemplate.Name = "btnSaveHeaderTemplate";
             this.btnSaveHeaderTemplate.Size = new System.Drawing.Size(125, 50);
             this.btnSaveHeaderTemplate.TabIndex = 15;
@@ -136,11 +138,35 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.btnDelete_Click);
             // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.checkBox1.Location = new System.Drawing.Point(721, 23);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(350, 47);
+            this.checkBox1.TabIndex = 19;
+            this.checkBox1.Text = "เอางดออกเสียงไปรวมในการคำนวณ";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            // 
+            // checkBox2
+            // 
+            this.checkBox2.AutoSize = true;
+            this.checkBox2.Font = new System.Drawing.Font("Angsana New", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.checkBox2.Location = new System.Drawing.Point(721, 76);
+            this.checkBox2.Name = "checkBox2";
+            this.checkBox2.Size = new System.Drawing.Size(374, 47);
+            this.checkBox2.TabIndex = 20;
+            this.checkBox2.Text = "ไม่เอางดออกเสียงไปรวมในการคำนวณ";
+            this.checkBox2.UseVisualStyleBackColor = true;
+            // 
             // Agenda
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1484, 711);
+            this.Controls.Add(this.checkBox2);
+            this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.dataGridViewTemplate);
             this.Controls.Add(this.btnSaveHeaderTemplate);
@@ -173,5 +199,7 @@
         private System.Windows.Forms.Button btnSaveHeaderTemplate;
         private System.Windows.Forms.DataGridView dataGridViewTemplate;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.CheckBox checkBox1;
+        private System.Windows.Forms.CheckBox checkBox2;
     }
 }

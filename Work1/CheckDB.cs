@@ -10,11 +10,16 @@ using System.Windows.Forms;
 using System.Data.SqlClient;
 using Microsoft.VisualBasic;
 using ThaiNationalIDCard;
+using PCSC;
+using PCSC.Iso7816;
+using DocumentFormat.OpenXml.Office2016.Drawing.Charts;
 namespace Work1
 {
     public partial class CheckDB : Form
     {
         private ThaiIDCard idcard;
+        private bool isProcessingCard = false;
+        private MultiInputForm multiInputForm;
         public CheckDB()
         {
             InitializeComponent();
@@ -28,7 +33,20 @@ namespace Work1
         {
             idcard = new ThaiIDCard();
             btnRefreshReaderList_Click(sender, e); // Add this line to search for card readers on form load
-            chkBoxMonitor.Checked = true; // Add this line to check the checkbox on form load
+            // Check if any card readers are available
+            if (cbxReaderList.Items.Count == 0)
+            {
+                // Disable controls if no card readers are found
+                cbxReaderList.Enabled = false;
+                btnRefreshReaderList.Enabled = false;
+                chkBoxMonitor.Enabled = false;
+                btnRead.Enabled = false;
+                PhotoProgressBar1.Enabled = false;
+            }
+            else
+            {
+                chkBoxMonitor.Checked = true; // Add this line to check the checkbox on form load
+            }
         }
 
         private Main _Main;
@@ -120,6 +138,9 @@ namespace Work1
                                 col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
                             }
                         });
+
+                        // ล้างข้อมูลในช่อง TextBox หลังจากการค้นหาเสร็จสิ้น
+                        ClearSearchFields();
                     }
                 }
             }
@@ -128,8 +149,18 @@ namespace Work1
                 MessageBox.Show("เกิดข้อผิดพลาด: " + ex.Message);
             }
         }
+        // ฟังก์ชันช่วยเหลือสำหรับล้างข้อมูลใน TextBox
+        private void ClearSearchFields()
+        {
+            textBox1.Text = string.Empty;
+            textBox2.Text = string.Empty;
+            textBox3.Text = string.Empty;
+        }
         private void btnRegister_Click_1(object sender, EventArgs e)
         {
+            // Initialize the MultiInputForm instance before using it
+            multiInputForm = new MultiInputForm();
+
             // ตรวจสอบว่า DataGridView มีแถวที่เลือกหรือไม่
             if (dataGridView.SelectedRows.Count == 0)
             {
@@ -153,7 +184,6 @@ namespace Work1
             if (choiceForm.ShowDialog() == DialogResult.OK)
             {
                 string attendChoice = choiceForm.SelectedChoice;  // "มาเอง" หรือ "มอบฉันทะ"
-                MultiInputForm multiInputForm = new MultiInputForm();
                 if (multiInputForm.ShowDialog() == DialogResult.OK)
                 {
                     string peopleCountInput = multiInputForm.PeopleCountInput;
@@ -163,12 +193,12 @@ namespace Work1
                     {
                         conn.Open();
                         string updateQuery = @"
-                    UPDATE PersonData
-                    SET RegStatus = N'ลงทะเบียนแล้ว',
-                        SelfCount = CASE WHEN @AttendType = N'มาเอง' THEN 1 ELSE SelfCount END,
-                        Proxycount = CASE WHEN @AttendType = N'มอบฉันทะ' THEN 1 ELSE Proxycount END,
-                        Note = @Note
-                    WHERE Id = @Id";
+                        UPDATE PersonData
+                        SET RegStatus = N'ลงทะเบียนแล้ว',
+                            SelfCount = CASE WHEN @AttendType = N'มาเอง' THEN 1 ELSE SelfCount END,
+                            Proxycount = CASE WHEN @AttendType = N'มอบฉันทะ' THEN 1 ELSE Proxycount END,
+                            Note = @Note
+                        WHERE Id = @Id";
                         using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
                         {
                             cmd.Parameters.AddWithValue("@AttendType", attendChoice);
@@ -456,42 +486,58 @@ namespace Work1
                 idcard.MonitorStart(cbxReaderList.SelectedItem.ToString());
                 idcard.eventCardInsertedWithPhoto += new handleCardInserted(CardInserted);
                 idcard.eventPhotoProgress += new handlePhotoProgress(photoProgress);
-
             }
             else
             {
                 if (cbxReaderList.SelectedItem != null)
+                {
                     idcard.MonitorStop(cbxReaderList.SelectedItem.ToString());
+                }
+                // ยกเลิกการสมัคร Event
+                idcard.eventCardInsertedWithPhoto -= new handleCardInserted(CardInserted);
             }
         }
         public void CardInserted(Personal personal)
         {
+            if (isProcessingCard) return; // หากกำลังประมวลผลอยู่ ให้ข้ามการทำงาน
+            isProcessingCard = true;
+
             try
             {
                 if (personal == null)
                 {
-                    if (idcard.ErrorCode() > 0)
-                    {
-                        MessageBox.Show(idcard.Error());
-                    }
-                    else
-                    {
-                        MessageBox.Show("No card detected.");
-                    }
+                    HandleCardReadError();
                     return;
                 }
 
-                // Clear old data
-                ClearOldData();
+                this.Invoke(new MethodInvoker(() =>
+                {
+                    // ตรวจสอบว่า MultiInputForm เปิดอยู่หรือไม่
+                    if (multiInputForm != null && !multiInputForm.IsDisposed)
+                    {
+                        // อัปเดต txtNote ใน MultiInputForm
+                        multiInputForm.UpdateNote($"{personal.Th_Prefix}{personal.Th_Firstname} {personal.Th_Lastname}");
+                    }
+                    else
+                    {
+                        // Clear old data
+                        ClearOldData();
 
-                textBox3.BeginInvoke(new MethodInvoker(() => { textBox3.Text = personal.Citizenid; }));
-                textBox1.BeginInvoke(new MethodInvoker(() => { textBox1.Text = personal.Th_Firstname; }));
-                textBox2.BeginInvoke(new MethodInvoker(() => { textBox2.Text = personal.Th_Lastname; }));
-                this.BeginInvoke(new MethodInvoker(() => { SearchButton_Click(this, EventArgs.Empty); }));
+                        // อัปเดตข้อมูลใน TextBox
+                        UpdatePersonalInfo(personal);
+
+                        // เรียกการค้นหาอัตโนมัติ
+                        SearchButton_Click(this, EventArgs.Empty);
+                    }
+                }));
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error in CardInserted: " + ex.Message);
+                MessageBox.Show("เกิดข้อผิดพลาดใน CardInserted: " + ex.Message);
+            }
+            finally
+            {
+                isProcessingCard = false; // รีเซ็ตสถานะเมื่อประมวลผลเสร็จ
             }
         }
 
@@ -499,29 +545,68 @@ namespace Work1
         {
             try
             {
+                // ตรวจสอบว่าเครื่องอ่านบัตรถูกเลือกหรือไม่
+                if (cbxReaderList.SelectedItem == null)
+                {
+                    MessageBox.Show("กรุณาเลือกเครื่องอ่านบัตรก่อนดำเนินการ");
+                    return;
+                }
+
                 // Clear old data
                 ClearOldData();
 
+                // อ่านข้อมูลจากบัตร
                 Personal personal = idcard.readAll();
                 if (personal != null)
                 {
-                    textBox3.Text = personal.Citizenid;
-                    textBox1.Text = personal.Th_Firstname;
-                    textBox2.Text = personal.Th_Lastname;
-                    SearchButton_Click(sender, e); // Trigger search after reading card
-                }
-                else if (idcard.ErrorCode() > 0)
-                {
-                    MessageBox.Show(idcard.Error());
+                    // อัปเดตข้อมูลใน TextBox
+                    UpdatePersonalInfo(personal);
+
+                    // เรียกการค้นหาอัตโนมัติ
+                    SearchButton_Click(sender, e);
                 }
                 else
                 {
-                    MessageBox.Show("No card detected.");
+                    HandleCardReadError();
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                MessageBox.Show("เกิดข้อผิดพลาดในการอ่านบัตร: " + ex.Message);
+            }
+        }
+        private void UpdateUI(Action updateAction)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(updateAction);
+            }
+            else
+            {
+                updateAction();
+            }
+        }
+
+        private void UpdatePersonalInfo(Personal personal)
+        {
+            UpdateUI(() =>
+            {
+                textBox3.Text = personal.Citizenid;
+                textBox1.Text = personal.Th_Firstname;
+                textBox2.Text = personal.Th_Lastname;
+            });
+        }
+
+        // ฟังก์ชันช่วยเหลือสำหรับจัดการข้อผิดพลาดในการอ่านบัตร
+        private void HandleCardReadError()
+        {
+            if (idcard.ErrorCode() > 0)
+            {
+                MessageBox.Show("ข้อผิดพลาดจากเครื่องอ่านบัตร: " + idcard.Error());
+            }
+            else
+            {
+                MessageBox.Show("ไม่พบบัตร กรุณาเสียบบัตรและลองใหม่อีกครั้ง");
             }
         }
 
@@ -539,7 +624,8 @@ namespace Work1
                 string[] readers = idcard.GetReaders();
 
                 if (readers == null) return;
-
+                if (this.IsDisposed || !this.IsHandleCreated)
+                    return;
                 foreach (string r in readers)
                 {
                     cbxReaderList.Items.Add(r);
@@ -553,9 +639,9 @@ namespace Work1
 
                 cbxReaderList.DroppedDown = true;
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show(ex.ToString());
+                
             }
         }
         private void photoProgress(int value, int maximum)

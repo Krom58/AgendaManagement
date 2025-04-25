@@ -44,6 +44,7 @@ namespace Work1
             string meetingNumber = txtMeetingNumber.Text.Trim();
             string agendaNumber = txtAgendaNumber.Text.Trim();
             string agendaTitle = txtAgendaTitle.Text.Trim();
+
             // ตรวจสอบข้อมูล
             if (string.IsNullOrEmpty(meetingNumber))
             {
@@ -67,18 +68,41 @@ namespace Work1
                 return;
             }
 
+            // ตรวจสอบสถานะของ CheckBox
+            if (checkBox1.Checked && checkBox2.Checked)
+            {
+                MessageBox.Show("ไม่สามารถเลือกประเภทวาระได้มากกว่า 1 ประเภท", "ข้อผิดพลาด", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            int agendaType = 0;
+            if (checkBox1.Checked)
+            {
+                agendaType = 1;
+            }
+            else if (checkBox2.Checked)
+            {
+                agendaType = 2;
+            }
+            else
+            {
+                MessageBox.Show("กรุณาเลือกประเภทวาระ (Agenda Type)");
+                return;
+            }
+
             try
             {
                 using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
                 {
                     conn.Open();
-                    string query = @"INSERT INTO HeaderTemplate (MeetingNumber, AgendaNumber, AgendaTitle)
-                                     VALUES (@MeetingNumber, @AgendaNumber, @AgendaTitle)";
+                    string query = @"INSERT INTO HeaderTemplate (MeetingNumber, AgendaNumber, AgendaTitle, AgendaType)
+                             VALUES (@MeetingNumber, @AgendaNumber, @AgendaTitle, @AgendaType)";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@MeetingNumber", meetingNumber);
                         cmd.Parameters.AddWithValue("@AgendaNumber", agendaNumber);
                         cmd.Parameters.AddWithValue("@AgendaTitle", agendaTitle);
+                        cmd.Parameters.AddWithValue("@AgendaType", agendaType);
                         cmd.ExecuteNonQuery();
                     }
                 }

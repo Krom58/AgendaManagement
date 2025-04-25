@@ -16,7 +16,6 @@ namespace Work1
         {
             InitializeComponent();
         }
-
         private void ImportExcel_Click(object sender, EventArgs e)
         {
             // สร้างอินสแตนซ์ของ Form2 พร้อมส่ง this (Form1) ไปใน constructor
@@ -69,6 +68,17 @@ namespace Work1
 
             // แสดง Form2
             AgendaSummary.Show();
+        }
+
+        private void Setting_Click(object sender, EventArgs e)
+        {
+            ImportExcel.Visible = !ImportExcel.Visible;
+            Agenda.Visible = !Agenda.Visible;
+        }
+
+        private void Main_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
