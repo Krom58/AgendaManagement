@@ -93,44 +93,62 @@ namespace Work1
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
 
-                    string deleteQuery = "DELETE FROM PersonData";
-                    using (SqlCommand deleteCmd = new SqlCommand(deleteQuery, conn))
+                    string deleteQuery = "DELETE FROM \"PersonData\"";
+                    using (var deleteCmd = conn.CreateCommand())
                     {
+                        deleteCmd.CommandText = deleteQuery;
                         deleteCmd.ExecuteNonQuery();
                     }
 
                     foreach (DataGridViewRow row in dataGridView.Rows)
                     {
-                        // ข้ามแถวที่เป็นแถวใหม่ (New Row) ของ DataGridView
                         if (row.IsNewRow) continue;
 
-                        // ดึงค่าจากแต่ละคอลัมน์ (ปรับชื่อคอลัมน์ให้ตรงกับไฟล์ Excel)
-                        string n_title = row.Cells["n_title"].Value?.ToString();
-                        string n_first = row.Cells["n_first"].Value?.ToString();
-                        string n_last = row.Cells["n_last"].Value?.ToString();
-                        string q_share = row.Cells["q_share"].Value?.ToString();
-                        string i_ref = row.Cells["i_ref"].Value?.ToString();
+                        string n_title = row.Cells["n_title"].Value?.ToString() ?? string.Empty;
+                        string n_first = row.Cells["n_first"].Value?.ToString() ?? string.Empty;
+                        string n_last = row.Cells["n_last"].Value?.ToString() ?? string.Empty;
+                        string q_share = row.Cells["q_share"].Value?.ToString() ?? string.Empty;
+                        string i_ref = row.Cells["i_ref"].Value?.ToString() ?? string.Empty;
 
-                        // ถ้า i_tax หรือ q_share เป็นค่าว่าง ให้กำหนดเป็นค่าว่าง
-                        n_title = string.IsNullOrEmpty(n_title) ? string.Empty : n_title;
-                        n_first = string.IsNullOrEmpty(n_first) ? string.Empty : n_first;
-                        n_last = string.IsNullOrEmpty(n_last) ? string.Empty : n_last;
-                        q_share = string.IsNullOrEmpty(q_share) ? string.Empty : q_share;
-                        i_ref = string.IsNullOrEmpty(i_ref) ? string.Empty : i_ref;
-
-                        // สร้างคำสั่ง SQL สำหรับแทรกข้อมูล
-                        string query = "INSERT INTO PersonData (n_title, n_first, n_last, q_share, i_ref) VALUES (@n_title, @n_first, @n_last, @q_share, @i_ref)";
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
+                        string query = "INSERT INTO \"PersonData\" (n_title, n_first, n_last, q_share, i_ref) VALUES (@n_title, @n_first, @n_last, @q_share, @i_ref)";
+                        using (var cmd = conn.CreateCommand())
                         {
-                            cmd.Parameters.AddWithValue("@n_title", n_title);
-                            cmd.Parameters.AddWithValue("@n_first", n_first);
-                            cmd.Parameters.AddWithValue("@n_last", n_last);
-                            cmd.Parameters.AddWithValue("@q_share", q_share);
-                            cmd.Parameters.AddWithValue("@i_ref", i_ref);
+                            cmd.CommandText = query;
+
+                            var param1 = cmd.CreateParameter();
+                            param1.ParameterName = "@n_title";
+                            param1.Value = n_title;
+                            cmd.Parameters.Add(param1);
+
+                            var param2 = cmd.CreateParameter();
+                            param2.ParameterName = "@n_first";
+                            param2.Value = n_first;
+                            cmd.Parameters.Add(param2);
+
+                            var param3 = cmd.CreateParameter();
+                            param3.ParameterName = "@n_last";
+                            param3.Value = n_last;
+                            cmd.Parameters.Add(param3);
+
+                            var param4 = cmd.CreateParameter();
+                            param4.ParameterName = "@q_share";
+                            param4.Value = q_share;
+                            cmd.Parameters.Add(param4);
+
+                            var param5 = cmd.CreateParameter();
+                            param5.ParameterName = "@i_ref";
+                            param5.Value = i_ref;
+                            cmd.Parameters.Add(param5);
+
                             cmd.ExecuteNonQuery();
                         }
                     }

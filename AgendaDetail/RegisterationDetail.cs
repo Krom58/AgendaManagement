@@ -2,15 +2,17 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using Work1;
 
 namespace AgendaDetail
 {
@@ -46,20 +48,26 @@ namespace AgendaDetail
                 int peopleCountSelf = 0, peopleCountProxy = 0;
                 long shareCountSelf = 0, shareCountProxy = 0, totalShares = 0;
 
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfigDetail(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
 
                     // Load data from SelfRegistration
-                    string querySelf = "SELECT COUNT(*) AS PeopleCount, SUM(CONVERT(BIGINT, ShareCount)) AS ShareCount FROM SelfRegistration";
-                    using (SqlCommand cmd = new SqlCommand(querySelf, conn))
+                    string querySelf = "SELECT COUNT(*) AS \"PeopleCount_Self\", SUM(\"ShareCount\"::BIGINT) AS \"QShare_Self\" FROM \"SelfRegistration\"";
+                    using (DbCommand cmd = conn.CreateCommand())
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.CommandText = querySelf;
+                        using (DbDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
-                                peopleCountSelf = reader["PeopleCount"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount"]);
-                                shareCountSelf = reader["ShareCount"] == DBNull.Value ? 0 : Convert.ToInt64(reader["ShareCount"]);
+                                peopleCountSelf = reader["PeopleCount_Self"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount_Self"]);
+                                shareCountSelf = reader["QShare_Self"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare_Self"]);
                             }
                         }
                     }
@@ -68,15 +76,16 @@ namespace AgendaDetail
                     Debug.WriteLine($"SelfRegistration - PeopleCount: {peopleCountSelf}, ShareCount: {shareCountSelf}");
 
                     // Load data from ProxyRegistration
-                    string queryProxy = "SELECT COUNT(*) AS PeopleCount, SUM(CONVERT(BIGINT, ShareCount)) AS ShareCount FROM ProxyRegistration";
-                    using (SqlCommand cmd = new SqlCommand(queryProxy, conn))
+                    string queryProxy = "SELECT COUNT(*) AS \"PeopleCount_Proxy\", SUM(\"ShareCount\"::BIGINT) AS \"QShare_Proxy\" FROM \"ProxyRegistration\"";
+                    using (DbCommand cmd = conn.CreateCommand())
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.CommandText = queryProxy;
+                        using (DbDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
-                                peopleCountProxy = reader["PeopleCount"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount"]);
-                                shareCountProxy = reader["ShareCount"] == DBNull.Value ? 0 : Convert.ToInt64(reader["ShareCount"]);
+                                peopleCountProxy = reader["PeopleCount_Proxy"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount_Proxy"]);
+                                shareCountProxy = reader["QShare_Proxy"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare_Proxy"]);
                             }
                         }
                     }
@@ -85,9 +94,10 @@ namespace AgendaDetail
                     Debug.WriteLine($"ProxyRegistration - PeopleCount: {peopleCountProxy}, ShareCount: {shareCountProxy}");
 
                     // Load total shares from PersonData
-                    string queryTotalShares = "SELECT SUM(CONVERT(BIGINT, q_share)) AS TotalShares FROM PersonData";
-                    using (SqlCommand cmd = new SqlCommand(queryTotalShares, conn))
+                    string queryTotalShares = "SELECT SUM(\"q_share\"::BIGINT) AS \"TotalQShare\" FROM \"PersonData\"";
+                    using (DbCommand cmd = conn.CreateCommand())
                     {
+                        cmd.CommandText = queryTotalShares;
                         totalShares = Convert.ToInt64(cmd.ExecuteScalar() ?? 0);
                     }
 

@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
+using System.IO;
 
 namespace Work1
 {
@@ -92,17 +93,39 @@ namespace Work1
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string query = @"INSERT INTO HeaderTemplate (MeetingNumber, AgendaNumber, AgendaTitle, AgendaType)
+                    string query = @"INSERT INTO ""HeaderTemplate"" (""MeetingNumber"", ""AgendaNumber"", ""AgendaTitle"", ""AgendaType"")
                              VALUES (@MeetingNumber, @AgendaNumber, @AgendaTitle, @AgendaType)";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
-                        cmd.Parameters.AddWithValue("@MeetingNumber", meetingNumber);
-                        cmd.Parameters.AddWithValue("@AgendaNumber", agendaNumber);
-                        cmd.Parameters.AddWithValue("@AgendaTitle", agendaTitle);
-                        cmd.Parameters.AddWithValue("@AgendaType", agendaType);
+                        cmd.CommandText = query;
+
+                        var param1 = cmd.CreateParameter();
+                        param1.ParameterName = "@MeetingNumber";
+                        param1.Value = meetingNumber;
+                        cmd.Parameters.Add(param1);
+
+                        var param2 = cmd.CreateParameter();
+                        param2.ParameterName = "@AgendaNumber";
+                        param2.Value = agendaNumber;
+                        cmd.Parameters.Add(param2);
+
+                        var param3 = cmd.CreateParameter();
+                        param3.ParameterName = "@AgendaTitle";
+                        param3.Value = agendaTitle;
+                        cmd.Parameters.Add(param3);
+
+                        var param4 = cmd.CreateParameter();
+                        param4.ParameterName = "@AgendaType";
+                        param4.Value = agendaType;
+                        cmd.Parameters.Add(param4);
+
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -123,14 +146,24 @@ namespace Work1
         private bool IsAgendaNumberDuplicate(string agendaNumber)
         {
             bool duplicate = false;
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string query = "SELECT COUNT(*) FROM HeaderTemplate WHERE AgendaNumber = @AgendaNumber";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                string query = "SELECT COUNT(*) FROM \"HeaderTemplate\" WHERE \"AgendaNumber\" = @AgendaNumber";
+                using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
-                    cmd.Parameters.AddWithValue("@AgendaNumber", agendaNumber);
-                    int count = (int)cmd.ExecuteScalar();
+                    cmd.CommandText = query;
+
+                    var param = cmd.CreateParameter();
+                    param.ParameterName = "@AgendaNumber";
+                    param.Value = agendaNumber;
+                    cmd.Parameters.Add(param);
+
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
                     if (count > 0)
                     {
                         duplicate = true;
@@ -139,23 +172,6 @@ namespace Work1
             }
             return duplicate;
         }
-
-        // เมธอดตรวจสอบจำนวนวาระที่บันทึกไว้ในฐานข้อมูล
-        private int GetTotalAgendaCount()
-        {
-            int total = 0;
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
-            {
-                conn.Open();
-                string query = "SELECT COUNT(*) FROM HeaderTemplate";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    total = (int)cmd.ExecuteScalar();
-                }
-            }
-            return total;
-        }
-
         private void Agenda_Load(object sender, EventArgs e)
         {
             LoadDataFromDatabase();
@@ -164,24 +180,32 @@ namespace Work1
         {
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
 
-                    string query = "SELECT HeaderID, MeetingNumber, AgendaNumber, AgendaTitle FROM HeaderTemplate ORDER BY HeaderID";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    string query = "SELECT \"HeaderID\", \"MeetingNumber\", \"AgendaNumber\", \"AgendaTitle\" FROM \"HeaderTemplate\" ORDER BY \"HeaderID\"";
+                    using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
-                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        dataGridViewTemplate.DataSource = dt;
-                        dataGridViewTemplate.Columns["MeetingNumber"].HeaderText = "ครั้งที่";
-                        dataGridViewTemplate.Columns["AgendaNumber"].HeaderText = "วาระที่";
-                        dataGridViewTemplate.Columns["AgendaTitle"].HeaderText = "หัวข้อ";
-                        dataGridViewTemplate.Columns["HeaderId"].Visible = false;
-                        dataGridViewTemplate.Columns["MeetingNumber"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                        dataGridViewTemplate.Columns["AgendaNumber"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                        dataGridViewTemplate.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                        cmd.CommandText = query;
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            DataTable dt = new DataTable();
+                            dt.Load(reader);
+                            dataGridViewTemplate.DataSource = dt;
+                            dataGridViewTemplate.Columns["MeetingNumber"].HeaderText = "ครั้งที่";
+                            dataGridViewTemplate.Columns["AgendaNumber"].HeaderText = "วาระที่";
+                            dataGridViewTemplate.Columns["AgendaTitle"].HeaderText = "หัวข้อ";
+                            dataGridViewTemplate.Columns["HeaderId"].Visible = false;
+                            dataGridViewTemplate.Columns["MeetingNumber"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                            dataGridViewTemplate.Columns["AgendaNumber"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                            dataGridViewTemplate.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                        }
                     }
                 }
                 foreach (DataGridViewColumn col in dataGridViewTemplate.Columns)
@@ -217,13 +241,23 @@ namespace Work1
         }
         private void DeleteRecord(int headerID)
         {
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string query = "DELETE FROM HeaderTemplate WHERE HeaderID = @HeaderID";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                string query = "DELETE FROM \"HeaderTemplate\" WHERE \"HeaderID\" = @HeaderID";
+                using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
-                    cmd.Parameters.AddWithValue("@HeaderID", headerID);
+                    cmd.CommandText = query;
+
+                    var param = cmd.CreateParameter();
+                    param.ParameterName = "@HeaderID";
+                    param.Value = headerID;
+                    cmd.Parameters.Add(param);
+
                     cmd.ExecuteNonQuery();
                 }
             }

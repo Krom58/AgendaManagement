@@ -13,6 +13,8 @@ using System.Drawing.Printing;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using System.Drawing.Configuration;
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using System.IO;
+using System.Data.Common;
 
 namespace Work1
 {
@@ -153,19 +155,29 @@ namespace Work1
             string q_share = "";
             string identifier = "";
 
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
 
                 // ดึงข้อมูลจาก PersonData สำหรับ personId
                 string queryPerson = @"
-                SELECT CONCAT(n_title, n_first, ' ', n_last) AS FullName, q_share
-                FROM PersonData
-                WHERE Id = @Id";
-                using (SqlCommand cmd = new SqlCommand(queryPerson, conn))
+                SELECT CONCAT(n_title, n_first, ' ', n_last) AS ""FullName"", ""q_share""
+                FROM ""PersonData""
+                WHERE ""Id"" = @Id";
+                using (DbCommand cmd = conn.CreateCommand())
                 {
-                    cmd.Parameters.AddWithValue("@Id", personId);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    cmd.CommandText = queryPerson;
+                    DbParameter param = cmd.CreateParameter();
+                    param.ParameterName = "@Id";
+                    param.Value = personId;
+                    cmd.Parameters.Add(param);
+
+                    using (DbDataReader reader = cmd.ExecuteReader())
                     {
                         if (reader.Read())
                         {
@@ -179,11 +191,14 @@ namespace Work1
                 if (attendChoice == "มาเอง")
                 {
                     // ดึง Identifier จากตาราง SelfRegistration สำหรับ personId
-                    // (สมมุติว่าตาราง SelfRegistration มีคอลัมน์ PersonID ด้วย)
-                    string queryReg = "SELECT Identifier FROM SelfRegistration WHERE Id = @Id";
-                    using (SqlCommand cmd = new SqlCommand(queryReg, conn))
+                    string queryReg = "SELECT \"Identifier\" FROM \"SelfRegistration\" WHERE \"Id\" = @Id";
+                    using (DbCommand cmd = conn.CreateCommand())
                     {
-                        cmd.Parameters.AddWithValue("@Id", personId);
+                        cmd.CommandText = queryReg;
+                        DbParameter param = cmd.CreateParameter();
+                        param.ParameterName = "@Id";
+                        param.Value = personId;
+                        cmd.Parameters.Add(param);
                         object result = cmd.ExecuteScalar();
                         if (result != null)
                             identifier = result.ToString();
@@ -192,10 +207,14 @@ namespace Work1
                 else if (attendChoice == "มอบฉันทะ")
                 {
                     // ดึง Identifier จากตาราง ProxyRegistration สำหรับ personId
-                    string queryReg = "SELECT Identifier FROM ProxyRegistration WHERE Id = @Id";
-                    using (SqlCommand cmd = new SqlCommand(queryReg, conn))
+                    string queryReg = "SELECT \"Identifier\" FROM \"ProxyRegistration\" WHERE \"Id\" = @Id";
+                    using (DbCommand cmd = conn.CreateCommand())
                     {
-                        cmd.Parameters.AddWithValue("@Id", personId);
+                        cmd.CommandText = queryReg;
+                        DbParameter param = cmd.CreateParameter();
+                        param.ParameterName = "@Id";
+                        param.Value = personId;
+                        cmd.Parameters.Add(param);
                         object result = cmd.ExecuteScalar();
                         if (result != null)
                             identifier = result.ToString();
@@ -204,12 +223,14 @@ namespace Work1
 
                 // ดึงข้อมูล Template จากตาราง HeaderTemplate ทั้งหมด
                 string queryTemplate = @"
-                SELECT MeetingNumber, AgendaNumber, AgendaTitle
-                FROM HeaderTemplate
-                ORDER BY HeaderID";
-                using (SqlCommand cmd = new SqlCommand(queryTemplate, conn))
+                SELECT ""MeetingNumber"", ""AgendaNumber"", ""AgendaTitle""
+                FROM ""HeaderTemplate""
+                ORDER BY ""HeaderID""";
+                using (DbCommand cmd = conn.CreateCommand())
                 {
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    cmd.CommandText = queryTemplate;
+
+                    using (DbDataReader reader = cmd.ExecuteReader())
                     {
                         StringBuilder documentTemplate = new StringBuilder();
                         while (reader.Read())

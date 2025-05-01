@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
+using System.IO;
+using System.Data.Common;
 
 namespace Work1
 {
@@ -61,16 +63,21 @@ namespace Work1
             }
             int headerID = Convert.ToInt32(comboBox1.SelectedValue);
 
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
 
                 string sqlInsert = @"
-        INSERT INTO RegistrationSummary (
-            MeetingDate,
-            PeopleCount_Self, QShare_Self,
-            PeopleCount_Proxy, QShare_Proxy,
-            PeopleCount_Total, QShare_Total
+        INSERT INTO ""RegistrationSummary"" (
+            ""MeetingDate"",
+            ""PeopleCount_Self"", ""QShare_Self"",
+            ""PeopleCount_Proxy"", ""QShare_Proxy"",
+            ""PeopleCount_Total"", ""QShare_Total""
         )
         VALUES (
             @MeetingDate,
@@ -78,24 +85,60 @@ namespace Work1
             @PeopleCount_Proxy, @QShare_Proxy,
             @PeopleCount_Total, @QShare_Total
         );";
-                using (SqlCommand cmd = new SqlCommand(sqlInsert, conn))
+                using (var cmd = conn.CreateCommand())
                 {
-                    cmd.Parameters.AddWithValue("@MeetingDate", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@PeopleCount_Self", peopleCountSelf);
-                    cmd.Parameters.AddWithValue("@QShare_Self", qShareSelf);
-                    cmd.Parameters.AddWithValue("@PeopleCount_Proxy", peopleCountProxy);
-                    cmd.Parameters.AddWithValue("@QShare_Proxy", qShareProxy);
-                    cmd.Parameters.AddWithValue("@PeopleCount_Total", peopleCountTotal);
-                    cmd.Parameters.AddWithValue("@QShare_Total", qShareTotal);
+                    cmd.CommandText = sqlInsert;
+
+                    // Add parameters using DbCommand's parameter creation method
+                    var param1 = cmd.CreateParameter();
+                    param1.ParameterName = "@MeetingDate";
+                    param1.Value = DateTime.Now;
+                    cmd.Parameters.Add(param1);
+
+                    var param2 = cmd.CreateParameter();
+                    param2.ParameterName = "@PeopleCount_Self";
+                    param2.Value = peopleCountSelf;
+                    cmd.Parameters.Add(param2);
+
+                    var param3 = cmd.CreateParameter();
+                    param3.ParameterName = "@QShare_Self";
+                    param3.Value = qShareSelf;
+                    cmd.Parameters.Add(param3);
+
+                    var param4 = cmd.CreateParameter();
+                    param4.ParameterName = "@PeopleCount_Proxy";
+                    param4.Value = peopleCountProxy;
+                    cmd.Parameters.Add(param4);
+
+                    var param5 = cmd.CreateParameter();
+                    param5.ParameterName = "@QShare_Proxy";
+                    param5.Value = qShareProxy;
+                    cmd.Parameters.Add(param5);
+
+                    var param6 = cmd.CreateParameter();
+                    param6.ParameterName = "@PeopleCount_Total";
+                    param6.Value = peopleCountTotal;
+                    cmd.Parameters.Add(param6);
+
+                    var param7 = cmd.CreateParameter();
+                    param7.ParameterName = "@QShare_Total";
+                    param7.Value = qShareTotal;
+                    cmd.Parameters.Add(param7);
 
                     cmd.ExecuteNonQuery();
                 }
 
-                string checkQuery = "SELECT COUNT(*) FROM HeaderTemplate WHERE HeaderID = @HeaderID AND IsRegistered = 'บันทึกแล้ว'";
-                using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                string checkQuery = "SELECT COUNT(*) FROM \"HeaderTemplate\" WHERE \"HeaderID\" = @HeaderID AND \"IsRegistered\" = 'บันทึกแล้ว'";
+                using (var checkCmd = conn.CreateCommand())
                 {
-                    checkCmd.Parameters.AddWithValue("@HeaderID", headerID);
-                    int count = (int)checkCmd.ExecuteScalar();
+                    checkCmd.CommandText = checkQuery;
+
+                    var parameter = checkCmd.CreateParameter();
+                    parameter.ParameterName = "@HeaderID";
+                    parameter.Value = headerID;
+                    checkCmd.Parameters.Add(parameter);
+
+                    int count = Convert.ToInt32(checkCmd.ExecuteScalar());
 
                     if (count > 0)
                     {
@@ -109,26 +152,60 @@ namespace Work1
                 }
 
                 string updateQuery = @"
-        UPDATE HeaderTemplate
-        SET peopleCountTotal = @peopleCountTotal, 
-            qShareTotal = @qShareTotal, 
-            PeopleCount_Self = @PeopleCount_Self,
-            PeopleCount_Proxy = @PeopleCount_Proxy,
-            QShare_Self = @QShare_Self,
-            QShare_Proxy = @QShare_Proxy,
-            IsSummaryComplete = @IsSummaryComplete,
-            IsRegistered = 'บันทึกแล้ว'
-        WHERE HeaderID = @HeaderID";
-                using (SqlCommand updateCmd = new SqlCommand(updateQuery, conn))
+        UPDATE ""HeaderTemplate""
+        SET ""peopleCountTotal"" = @peopleCountTotal, 
+            ""qShareTotal"" = @qShareTotal, 
+            ""PeopleCount_Self"" = @PeopleCount_Self,
+            ""PeopleCount_Proxy"" = @PeopleCount_Proxy,
+            ""QShare_Self"" = @QShare_Self,
+            ""QShare_Proxy"" = @QShare_Proxy,
+            ""IsSummaryComplete"" = @IsSummaryComplete,
+            ""IsRegistered"" = 'บันทึกแล้ว'
+        WHERE ""HeaderID"" = @HeaderID";
+                using (var updateCmd = conn.CreateCommand())
                 {
-                    updateCmd.Parameters.AddWithValue("@peopleCountTotal", peopleCountTotal);
-                    updateCmd.Parameters.AddWithValue("@qShareTotal", qShareTotal);
-                    updateCmd.Parameters.AddWithValue("@PeopleCount_Self", peopleCountSelf);
-                    updateCmd.Parameters.AddWithValue("@PeopleCount_Proxy", peopleCountProxy);
-                    updateCmd.Parameters.AddWithValue("@QShare_Self", qShareSelf);
-                    updateCmd.Parameters.AddWithValue("@QShare_Proxy", qShareProxy);
-                    updateCmd.Parameters.AddWithValue("@IsSummaryComplete", true);
-                    updateCmd.Parameters.AddWithValue("@HeaderID", headerID);
+                    updateCmd.CommandText = updateQuery;
+
+                    var param1 = updateCmd.CreateParameter();
+                    param1.ParameterName = "@peopleCountTotal";
+                    param1.Value = peopleCountTotal;
+                    updateCmd.Parameters.Add(param1);
+
+                    var param2 = updateCmd.CreateParameter();
+                    param2.ParameterName = "@qShareTotal";
+                    param2.Value = qShareTotal;
+                    updateCmd.Parameters.Add(param2);
+
+                    var param3 = updateCmd.CreateParameter();
+                    param3.ParameterName = "@PeopleCount_Self";
+                    param3.Value = peopleCountSelf;
+                    updateCmd.Parameters.Add(param3);
+
+                    var param4 = updateCmd.CreateParameter();
+                    param4.ParameterName = "@PeopleCount_Proxy";
+                    param4.Value = peopleCountProxy;
+                    updateCmd.Parameters.Add(param4);
+
+                    var param5 = updateCmd.CreateParameter();
+                    param5.ParameterName = "@QShare_Self";
+                    param5.Value = qShareSelf;
+                    updateCmd.Parameters.Add(param5);
+
+                    var param6 = updateCmd.CreateParameter();
+                    param6.ParameterName = "@QShare_Proxy";
+                    param6.Value = qShareProxy;
+                    updateCmd.Parameters.Add(param6);
+
+                    var param7 = updateCmd.CreateParameter();
+                    param7.ParameterName = "@IsSummaryComplete";
+                    param7.Value = true;
+                    updateCmd.Parameters.Add(param7);
+
+                    var param8 = updateCmd.CreateParameter();
+                    param8.ParameterName = "@HeaderID";
+                    param8.Value = headerID;
+                    updateCmd.Parameters.Add(param8);
+
                     updateCmd.ExecuteNonQuery();
                 }
             }
@@ -162,16 +239,22 @@ namespace Work1
             }
             else
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
 
                     int pCountSelf = 0, pCountProxy = 0;
                     long qCountSelf = 0, qCountProxy = 0, totalQShareFromPerson = 0;
 
-                    using (SqlCommand cmd = new SqlCommand("SELECT COUNT(*) AS PeopleCount_Self, SUM(CONVERT(BIGINT, ShareCount)) AS QShare_Self FROM SelfRegistration", conn))
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.CommandText = "SELECT COUNT(*) AS \"PeopleCount_Self\", SUM(\"ShareCount\"::BIGINT) AS \"QShare_Self\" FROM \"SelfRegistration\"";
+                        using (var reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
@@ -181,9 +264,10 @@ namespace Work1
                         }
                     }
 
-                    using (SqlCommand cmd = new SqlCommand("SELECT COUNT(*) AS PeopleCount_Proxy, SUM(CONVERT(BIGINT, ShareCount)) AS QShare_Proxy FROM ProxyRegistration", conn))
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.CommandText = "SELECT COUNT(*) AS \"PeopleCount_Proxy\", SUM(\"ShareCount\"::BIGINT) AS \"QShare_Proxy\" FROM \"ProxyRegistration\"";
+                        using (var reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
@@ -193,13 +277,16 @@ namespace Work1
                         }
                     }
 
-                    using (SqlCommand cmd = new SqlCommand("SELECT SUM(CONVERT(BIGINT, q_share)) AS TotalQShare FROM PersonData", conn))
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.CommandText = "SELECT SUM(\"q_share\"::BIGINT) AS \"TotalQShare\" FROM \"PersonData\"";
                         {
-                            if (reader.Read())
+                            using (var reader = cmd.ExecuteReader())
                             {
-                                totalQShareFromPerson = reader["TotalQShare"] == DBNull.Value ? 0 : Convert.ToInt64(reader["TotalQShare"]);
+                                if (reader.Read())
+                                {
+                                    totalQShareFromPerson = reader["TotalQShare"] == DBNull.Value ? 0 : Convert.ToInt64(reader["TotalQShare"]);
+                                }
                             }
                         }
                     }
@@ -219,12 +306,18 @@ namespace Work1
             }
 
             long totalQShareGlobal = 0;
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // Adjusted variable name to avoid conflict
+            var iniPathForPreview = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfgForPreview = new DBConfig(iniPathForPreview);
+
+            using (var conn = dbcfgForPreview.CreateConnection())
             {
                 conn.Open();
-                string query = "SELECT SUM(CONVERT(BIGINT, q_share)) FROM PersonData";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                // แก้คำสั่ง SQL โดยใช้ "::BIGINT" แทน CONVERT(BIGINT, ...)
+                string query = "SELECT SUM(\"q_share\"::BIGINT) FROM \"PersonData\"";
+                using (var cmd = conn.CreateCommand()) // ใช้ DbCommand แทน SqlCommand
                 {
+                    cmd.CommandText = query;
                     totalQShareGlobal = Convert.ToInt64(cmd.ExecuteScalar() ?? 0);
                 }
             }
@@ -273,41 +366,41 @@ namespace Work1
                 dr["AgendaDisplay"] = "ผู้ลงทะเบียนทั้งหมด";
                 dt.Rows.Add(dr);
 
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string checkQuery = "SELECT COUNT(*) FROM HeaderTemplate";
-                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                    string checkQuery = "SELECT COUNT(*) FROM \"HeaderTemplate\"";
+                    using (DbCommand checkCmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
-                        int count = (int)checkCmd.ExecuteScalar();
+                        checkCmd.CommandText = checkQuery;
+                        int count = Convert.ToInt32(checkCmd.ExecuteScalar());
                         if (count > 0)
                         {
-                            string query = "SELECT HeaderID, AgendaNumber, AgendaTitle FROM HeaderTemplate ORDER BY HeaderID";
-                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            string query = "SELECT \"HeaderID\", \"AgendaNumber\", \"AgendaTitle\" FROM \"HeaderTemplate\" ORDER BY \"HeaderID\"";
+                            using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                             {
-                                SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                                DataTable dtData = new DataTable();
-                                adapter.Fill(dtData);
-                                foreach (DataRow row in dtData.Rows)
+                                cmd.CommandText = query;
+                                using (DbDataAdapter adapter = DbProviderFactories.GetFactory(conn).CreateDataAdapter())
                                 {
-                                    DataRow newRow = dt.NewRow();
-                                    newRow["HeaderID"] = row["HeaderID"];
-                                    newRow["AgendaNumber"] = row["AgendaNumber"];
-                                    newRow["AgendaTitle"] = row["AgendaTitle"];
-                                    newRow["AgendaDisplay"] = "วาระที่ " + row["AgendaNumber"] + " - " + row["AgendaTitle"];
-                                    dt.Rows.Add(newRow);
+                                    adapter.SelectCommand = cmd;
+                                    DataTable dtData = new DataTable();
+                                    adapter.Fill(dtData);
+                                    foreach (DataRow row in dtData.Rows)
+                                    {
+                                        DataRow newRow = dt.NewRow();
+                                        newRow["HeaderID"] = row["HeaderID"];
+                                        newRow["AgendaNumber"] = row["AgendaNumber"];
+                                        newRow["AgendaTitle"] = row["AgendaTitle"];
+                                        newRow["AgendaDisplay"] = "วาระที่ " + row["AgendaNumber"] + " - " + row["AgendaTitle"];
+                                        dt.Rows.Add(newRow);
+                                    }
                                 }
                             }
-                        }
-                        else
-                        {
-                            // กรณีไม่มีข้อมูลใน HeaderTemplate
-                            DataRow newRow = dt.NewRow();
-                            newRow["HeaderID"] = 0;
-                            newRow["AgendaNumber"] = "N/A";
-                            newRow["AgendaTitle"] = "ข้อมูลจาก Self และ Proxy";
-                            newRow["AgendaDisplay"] = "ข้อมูลจาก Self และ Proxy";
-                            dt.Rows.Add(newRow);
                         }
                     }
                 }
@@ -343,14 +436,23 @@ namespace Work1
                 return;
             }
 
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string checkQuery = "SELECT COUNT(*) FROM HeaderTemplate WHERE HeaderID = @HeaderID AND IsRegistered = 'บันทึกแล้ว'";
-                using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                string checkQuery = "SELECT COUNT(*) FROM \"HeaderTemplate\" WHERE \"HeaderID\" = @HeaderID AND \"IsRegistered\" = 'บันทึกแล้ว'";
+                using (var cmd = conn.CreateCommand())
                 {
-                    checkCmd.Parameters.AddWithValue("@HeaderID", headerID);
-                    int count = (int)checkCmd.ExecuteScalar();
+                    cmd.CommandText = checkQuery;
+                    var parameter = cmd.CreateParameter();
+                    parameter.ParameterName = "@HeaderID";
+                    parameter.Value = headerID;
+                    cmd.Parameters.Add(parameter);
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
 
                     if (count > 0)
                     {
@@ -385,17 +487,27 @@ namespace Work1
             if (headerID == 0)
                 return false;
 
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
                 string query = @"
-        SELECT PeopleCountTotal, qShareTotal, PeopleCount_Self, PeopleCount_Proxy, QShare_Self, QShare_Proxy
-        FROM HeaderTemplate
-        WHERE HeaderID = @HeaderID";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+        SELECT ""peopleCountTotal"", ""qShareTotal"", ""PeopleCount_Self"", ""PeopleCount_Proxy"", ""QShare_Self"", ""QShare_Proxy""
+        FROM ""HeaderTemplate""
+        WHERE ""HeaderID"" = @HeaderID";
+                using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
-                    cmd.Parameters.AddWithValue("@HeaderID", headerID);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    cmd.CommandText = query;
+                    var parameter = cmd.CreateParameter();
+                    parameter.ParameterName = "@HeaderID";
+                    parameter.Value = headerID;
+                    cmd.Parameters.Add(parameter);
+
+                    using (DbDataReader reader = cmd.ExecuteReader()) // Use DbDataReader instead of SqlDataReader
                     {
                         if (reader.Read())
                         {

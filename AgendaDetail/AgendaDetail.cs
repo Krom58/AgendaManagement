@@ -8,6 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
+using System.IO;
+using System.Data.Common;
+using Work1;
 
 namespace AgendaDetail
 {
@@ -53,16 +56,22 @@ namespace AgendaDetail
         {
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfigDetail(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string query = "SELECT PeopleCount_Total FROM RegistrationSummary";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    string query = "SELECT \"PeopleCount_Total\" FROM \"RegistrationSummary\"";
+                    using (DbCommand cmd = conn.CreateCommand())
                     {
+                        cmd.CommandText = query;
                         object result = cmd.ExecuteScalar();
                         if (result != null && result != DBNull.Value)
                         {
-                            int peopleCountTotal = (int)result;
+                            int peopleCountTotal = Convert.ToInt32(result);
                             label7.Text = peopleCountTotal.ToString();
                         }
                         else
@@ -82,20 +91,29 @@ namespace AgendaDetail
         {
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfigDetail(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
                     string query = @"
-                        SELECT HeaderID, AgendaNumber, AgendaTitle, AgendaType, qShareTotal, peopleCountTotal
-                        FROM HeaderTemplate
-                        ORDER BY HeaderID";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                SELECT ""HeaderID"", ""AgendaNumber"", ""AgendaTitle"", ""AgendaType"", ""qShareTotal"", ""peopleCountTotal""
+                FROM ""HeaderTemplate""
+                ORDER BY ""HeaderID""";
+                    using (DbCommand cmd = conn.CreateCommand())
                     {
-                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                        dtHeaders = new DataTable();
-                        adapter.Fill(dtHeaders);
-                        // เพิ่มคอลัมน์ AgendaDisplay
-                        dtHeaders.Columns.Add("AgendaDisplay", typeof(string), "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
+                        cmd.CommandText = query;
+                        using (DbDataAdapter adapter = DbProviderFactories.GetFactory(conn).CreateDataAdapter())
+                        {
+                            adapter.SelectCommand = cmd;
+                            dtHeaders = new DataTable();
+                            adapter.Fill(dtHeaders);
+                            // เพิ่มคอลัมน์ AgendaDisplay
+                            dtHeaders.Columns.Add("AgendaDisplay", typeof(string), "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
+                        }
                     }
                 }
             }
@@ -157,23 +175,33 @@ namespace AgendaDetail
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfigDetail(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
                     string voteQuery = @"
-                        SELECT VoteType, SUM(ShareCount) AS TotalShareCount
-                        FROM VoteResults
-                        WHERE AgendaItem = @AgendaItem
-                        GROUP BY VoteType";
-                    using (SqlCommand voteCmd = new SqlCommand(voteQuery, conn))
+                SELECT ""VoteType"", SUM(""ShareCount"") AS ""TotalShareCount""
+                FROM ""VoteResults""
+                WHERE ""AgendaItem"" = @AgendaItem
+                GROUP BY ""VoteType""";
+                    using (DbCommand voteCmd = conn.CreateCommand())
                     {
-                        voteCmd.Parameters.AddWithValue("@AgendaItem", agendaItem);
-                        using (SqlDataReader reader = voteCmd.ExecuteReader())
+                        voteCmd.CommandText = voteQuery;
+                        var param = voteCmd.CreateParameter();
+                        param.ParameterName = "@AgendaItem";
+                        param.Value = agendaItem;
+                        voteCmd.Parameters.Add(param);
+
+                        using (DbDataReader reader = voteCmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                string voteType = reader["VoteType"].ToString();
-                                long shareCount = reader["TotalShareCount"] == DBNull.Value ? 0 : Convert.ToInt64(reader["TotalShareCount"]);
+                                string voteType = reader["\"VoteType\""].ToString();
+                                long shareCount = reader["\"TotalShareCount\""] == DBNull.Value ? 0 : Convert.ToInt64(reader["\"TotalShareCount\""]);
 
                                 switch (voteType)
                                 {

@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 using ClosedXML.Excel;
+using System.IO;
+using System.Data.Common;
 
 namespace Work1
 {
@@ -54,12 +56,18 @@ namespace Work1
         {
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string query = "SELECT PeopleCount_Total FROM RegistrationSummary";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    string query = "SELECT \"PeopleCount_Total\" FROM \"RegistrationSummary\"";
+                    using (var cmd = conn.CreateCommand()) // Use DbConnection's CreateCommand method
                     {
+                        cmd.CommandText = query;
                         var result = cmd.ExecuteScalar();
                         if (result != null)
                         {
@@ -81,15 +89,27 @@ namespace Work1
 
         private void LoadVoteResults(string agendaItem)
         {
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string query = "SELECT AgendaItem, VoteType, Identifier, PeopleCount, FullName, ShareCount FROM VoteResults WHERE AgendaItem = @AgendaItem";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                string query = "SELECT \"AgendaItem\", \"VoteType\", \"Identifier\", \"PeopleCount\", \"FullName\", \"ShareCount\" FROM \"VoteResults\" WHERE \"AgendaItem\" = @AgendaItem";
+                using (var cmd = conn.CreateCommand()) // Use DbConnection's CreateCommand method
                 {
-                    cmd.Parameters.AddWithValue("@AgendaItem", agendaItem);
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                    cmd.CommandText = query;
+
+                    var parameter = cmd.CreateParameter();
+                    parameter.ParameterName = "@AgendaItem";
+                    parameter.Value = agendaItem;
+                    cmd.Parameters.Add(parameter);
+
+                    using (var adapter = DbProviderFactories.GetFactory(conn).CreateDataAdapter())
                     {
+                        adapter.SelectCommand = cmd;
                         DataTable dt = new DataTable();
                         adapter.Fill(dt);
                         dataGridView8.DataSource = dt;
@@ -119,47 +139,59 @@ namespace Work1
             }
 
             string query = @"
-            SELECT 'มาเอง' AS Type, RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note
-            FROM SelfRegistration
-            WHERE Identifier = @Identifier
+            SELECT 'มาเอง' AS Type, ""RegistrationID"", ""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note""
+            FROM ""SelfRegistration""
+            WHERE ""Identifier"" = @Identifier
             UNION ALL
-            SELECT 'มอบฉันทะ' AS Type, RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note
-            FROM ProxyRegistration
-            WHERE Identifier = @Identifier
-            ORDER BY FullName";
+            SELECT 'มอบฉันทะ' AS Type, ""RegistrationID"", ""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note""
+            FROM ""ProxyRegistration""
+            WHERE ""Identifier"" = @Identifier
+            ORDER BY ""FullName""";
 
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // ใช้ DbConnection และ DbCommand เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 try
                 {
                     conn.Open();
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (var cmd = conn.CreateCommand())
                     {
-                        cmd.Parameters.AddWithValue("@Identifier", searchIdentifier);
-                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
+                        cmd.CommandText = query;
+                        var parameter = cmd.CreateParameter();
+                        parameter.ParameterName = "@Identifier";
+                        parameter.Value = searchIdentifier;
+                        cmd.Parameters.Add(parameter);
 
-                        if (dt.Rows.Count == 0)
+                        using (var adapter = dbcfg.Factory.CreateDataAdapter())
                         {
-                            MessageBox.Show("ไม่พบหมายเลขที่ค้นหา");
-                        }
-                        else
-                        {
-                            dataGridViewRegistration.DataSource = dt;
-                            dataGridViewRegistration.Columns["RegistrationID"].HeaderText = "รหัสลงทะเบียน";
-                            dataGridViewRegistration.Columns["Identifier"].HeaderText = "หมายเลข";
-                            dataGridViewRegistration.Columns["PeopleCount"].HeaderText = "";
-                            dataGridViewRegistration.Columns["FullName"].HeaderText = "ชื่อ - สกุล";
-                            dataGridViewRegistration.Columns["ShareCount"].HeaderText = "จำนวนหุ้น";
-                            dataGridViewRegistration.Columns["Note"].HeaderText = "หมายเหตุ";
-                            dataGridViewRegistration.Columns["RegistrationID"].Visible = false;
-                            dataGridViewRegistration.Columns["ShareCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-                            dataGridViewRegistration.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                            adapter.SelectCommand = cmd;
+                            DataTable dt = new DataTable();
+                            adapter.Fill(dt);
 
-                            foreach (DataGridViewColumn col in dataGridViewRegistration.Columns)
+                            if (dt.Rows.Count == 0)
                             {
-                                col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                                MessageBox.Show("ไม่พบหมายเลขที่ค้นหา");
+                            }
+                            else
+                            {
+                                dataGridViewRegistration.DataSource = dt;
+                                dataGridViewRegistration.Columns["RegistrationID"].HeaderText = "รหัสลงทะเบียน";
+                                dataGridViewRegistration.Columns["Identifier"].HeaderText = "หมายเลข";
+                                dataGridViewRegistration.Columns["PeopleCount"].HeaderText = "";
+                                dataGridViewRegistration.Columns["FullName"].HeaderText = "ชื่อ - สกุล";
+                                dataGridViewRegistration.Columns["ShareCount"].HeaderText = "จำนวนหุ้น";
+                                dataGridViewRegistration.Columns["Note"].HeaderText = "หมายเหตุ";
+                                dataGridViewRegistration.Columns["RegistrationID"].Visible = false;
+                                dataGridViewRegistration.Columns["ShareCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                                dataGridViewRegistration.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+
+                                foreach (DataGridViewColumn col in dataGridViewRegistration.Columns)
+                                {
+                                    col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                                }
                             }
                         }
                     }
@@ -210,7 +242,11 @@ namespace Work1
 
             string agendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
 
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // ใช้ DbConnection และ DbCommand เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
 
@@ -222,15 +258,25 @@ namespace Work1
                     long shareCount = Convert.ToInt64(row.Cells["ShareCount"].Value);
 
                     string checkQuery = @"
-                SELECT COUNT(*) 
-                FROM VoteResults 
-                WHERE AgendaItem = @AgendaItem AND FullName = @FullName";
+            SELECT COUNT(*) 
+            FROM ""VoteResults"" 
+            WHERE ""AgendaItem"" = @AgendaItem AND ""FullName"" = @FullName";
 
-                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                    using (var checkCmd = conn.CreateCommand())
                     {
-                        checkCmd.Parameters.AddWithValue("@AgendaItem", agendaItem);
-                        checkCmd.Parameters.AddWithValue("@FullName", fullName);
-                        int count = (int)checkCmd.ExecuteScalar();
+                        checkCmd.CommandText = checkQuery;
+
+                        var agendaParam = checkCmd.CreateParameter();
+                        agendaParam.ParameterName = "@AgendaItem";
+                        agendaParam.Value = agendaItem;
+                        checkCmd.Parameters.Add(agendaParam);
+
+                        var fullNameParam = checkCmd.CreateParameter();
+                        fullNameParam.ParameterName = "@FullName";
+                        fullNameParam.Value = fullName;
+                        checkCmd.Parameters.Add(fullNameParam);
+
+                        int count = Convert.ToInt32(checkCmd.ExecuteScalar());
 
                         if (count > 0)
                         {
@@ -240,17 +286,43 @@ namespace Work1
                     }
 
                     string insertQuery = @"
-                INSERT INTO VoteResults (AgendaItem, VoteType, Identifier, PeopleCount, FullName, ShareCount)
-                VALUES (@AgendaItem, @VoteType, @Identifier, @PeopleCount, @FullName, @ShareCount)";
+            INSERT INTO ""VoteResults"" (""AgendaItem"", ""VoteType"", ""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"")
+            VALUES (@AgendaItem, @VoteType, @Identifier, @PeopleCount, @FullName, @ShareCount)";
 
-                    using (SqlCommand insertCmd = new SqlCommand(insertQuery, conn))
+                    using (var insertCmd = conn.CreateCommand())
                     {
-                        insertCmd.Parameters.AddWithValue("@AgendaItem", agendaItem);
-                        insertCmd.Parameters.AddWithValue("@VoteType", voteType);
-                        insertCmd.Parameters.AddWithValue("@Identifier", identifier);
-                        insertCmd.Parameters.AddWithValue("@PeopleCount", peopleCount);
-                        insertCmd.Parameters.AddWithValue("@FullName", fullName);
-                        insertCmd.Parameters.AddWithValue("@ShareCount", shareCount);
+                        insertCmd.CommandText = insertQuery;
+
+                        var agendaParam = insertCmd.CreateParameter();
+                        agendaParam.ParameterName = "@AgendaItem";
+                        agendaParam.Value = agendaItem;
+                        insertCmd.Parameters.Add(agendaParam);
+
+                        var voteTypeParam = insertCmd.CreateParameter();
+                        voteTypeParam.ParameterName = "@VoteType";
+                        voteTypeParam.Value = voteType;
+                        insertCmd.Parameters.Add(voteTypeParam);
+
+                        var identifierParam = insertCmd.CreateParameter();
+                        identifierParam.ParameterName = "@Identifier";
+                        identifierParam.Value = identifier;
+                        insertCmd.Parameters.Add(identifierParam);
+
+                        var peopleCountParam = insertCmd.CreateParameter();
+                        peopleCountParam.ParameterName = "@PeopleCount";
+                        peopleCountParam.Value = peopleCount;
+                        insertCmd.Parameters.Add(peopleCountParam);
+
+                        var fullNameParam = insertCmd.CreateParameter();
+                        fullNameParam.ParameterName = "@FullName";
+                        fullNameParam.Value = fullName;
+                        insertCmd.Parameters.Add(fullNameParam);
+
+                        var shareCountParam = insertCmd.CreateParameter();
+                        shareCountParam.ParameterName = "@ShareCount";
+                        shareCountParam.Value = shareCount;
+                        insertCmd.Parameters.Add(shareCountParam);
+
                         insertCmd.ExecuteNonQuery();
                     }
                 }
@@ -259,35 +331,45 @@ namespace Work1
             LoadVoteResults(agendaItem);
         }
 
+
         private void LoadHeaderTemplateData()
         {
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                // ใช้ DbConnection และ DbCommand เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
                     string query = @"
-            SELECT HeaderID,
-                   AgendaNumber,
-                   AgendaTitle,
-                   AgendaType,
-                   qShareTotal,
-                   peopleCountTotal
-            FROM HeaderTemplate
-            ORDER BY HeaderID";
+                    SELECT ""HeaderID"",
+                           ""AgendaNumber"",
+                           ""AgendaTitle"",
+                           ""AgendaType"",
+                           ""qShareTotal"",
+                           ""peopleCountTotal""
+                    FROM ""HeaderTemplate""
+                    ORDER BY ""HeaderID""";
 
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (var cmd = conn.CreateCommand())
                     {
-                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
+                        cmd.CommandText = query;
 
-                        dt.Columns.Add("AgendaDisplay", typeof(string),
-                            "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
+                        using (var adapter = dbcfg.Factory.CreateDataAdapter())
+                        {
+                            adapter.SelectCommand = cmd;
+                            DataTable dt = new DataTable();
+                            adapter.Fill(dt);
 
-                        comboBox1.DataSource = dt;
-                        comboBox1.DisplayMember = "AgendaDisplay";
-                        comboBox1.ValueMember = "HeaderID";
+                            dt.Columns.Add("AgendaDisplay", typeof(string),
+                                "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
+
+                            comboBox1.DataSource = dt;
+                            comboBox1.DisplayMember = "AgendaDisplay";
+                            comboBox1.ValueMember = "HeaderID";
+                        }
                     }
                 }
             }
@@ -299,71 +381,55 @@ namespace Work1
 
         private void comboBox1_SelectedIndexChanged_1(object sender, EventArgs e)
         {
-            /*if (result != null && result != DBNull.Value)
-                        {
-                            bool isClosed = Convert.ToBoolean(result);
-                            if (isClosed)
-                            {
-                                // ถ้าวาระปิดแล้ว ให้ปิดปุ่มและคอนโทรลที่เกี่ยวข้อง
-                                DisableAgendaControls();
-                            }
-                            else
-                            {
-                                // ถ้าวาระยังไม่ปิด ให้เปิดปุ่มและคอนโทรล
-                                EnableAgendaControls();
-                            }
-                        }*/
             if (comboBox1.SelectedValue == null) return;
+
             DataRowView drv = comboBox1.SelectedItem as DataRowView;
             if (drv != null)
             {
                 int headerID = Convert.ToInt32(drv["HeaderID"]);
                 int agendaType = Convert.ToInt32(drv["AgendaType"]);
-                // เช็คค่า IsAgendaClosed ใน DB
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string checkQuery = "SELECT IsAgendaClosed FROM HeaderTemplate WHERE HeaderID = @HeaderID";
-                    using (SqlCommand cmd = new SqlCommand(checkQuery, conn))
+                    string checkQuery = "SELECT \"IsAgendaClosed\" FROM \"HeaderTemplate\" WHERE \"HeaderID\" = @HeaderID";
+                    using (var cmd = conn.CreateCommand())
                     {
-                        cmd.Parameters.AddWithValue("@HeaderID", headerID);
+                        cmd.CommandText = checkQuery;
+
+                        var headerParam = cmd.CreateParameter();
+                        headerParam.ParameterName = "@HeaderID";
+                        headerParam.Value = headerID;
+                        cmd.Parameters.Add(headerParam);
+
                         object result = cmd.ExecuteScalar();
                         if (result != null && result != DBNull.Value)
                         {
                             bool isAgendaClosed = Convert.ToBoolean(result);
-                            if (isAgendaClosed)
-                            {
-                                btnEndAgenda.BackColor = Color.LightCoral; // เปลี่ยนสีปุ่มเป็นสีแดงเมื่อวาระได้บันทึกไปแล้ว
-                            }
-                            else
-                            {
-                                btnEndAgenda.BackColor = Color.LightGreen; // เปลี่ยนสีปุ่มเป็นสีเขียวเมื่อสามารถบันทึกได้
-                            }
+                            btnEndAgenda.BackColor = isAgendaClosed ? Color.LightCoral : Color.LightGreen;
                         }
                     }
 
-                    if (drv != null)
-                    {
-                        DataTable dt = comboBox1.DataSource as DataTable;
-                        if (dt == null) return;
+                    DataTable dt = comboBox1.DataSource as DataTable;
+                    if (dt == null) return;
 
-                        DataRow[] rows = dt.Select($"HeaderID = {headerID}");
-                        if (rows.Length == 0) return;
+                    DataRow[] rows = dt.Select($"HeaderID = {headerID}");
+                    if (rows.Length == 0) return;
 
-                        long qShareTotal = rows[0]["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(rows[0]["qShareTotal"]);
-                        int peopleCountTotal = rows[0]["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(rows[0]["peopleCountTotal"]);
+                    long qShareTotal = rows[0]["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(rows[0]["qShareTotal"]);
+                    int peopleCountTotal = rows[0]["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(rows[0]["peopleCountTotal"]);
 
-                        label15.Text = qShareTotal.ToString("N0");
-                        label17.Text = peopleCountTotal.ToString();
+                    label15.Text = qShareTotal.ToString("N0");
+                    label17.Text = peopleCountTotal.ToString();
 
-                        label7.Text = qShareTotal.ToString("N0");
+                    string selectedAgendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
+                    AdjustControlsForAgendaType(agendaType);
+                    LoadVoteResults(selectedAgendaItem);
 
-                        string selectedAgendaItem = comboBox1.GetItemText(comboBox1.SelectedItem);
-                        AdjustControlsForAgendaType(agendaType);
-                        LoadVoteResults(selectedAgendaItem);
-
-                        CalculateAndDisplayVoteSummary();
-                    }
+                    CalculateAndDisplayVoteSummary();
                 }
             }
         }
@@ -424,20 +490,29 @@ namespace Work1
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
 
                     string voteQuery = @"
-            SELECT VoteType, SUM(ShareCount) AS TotalShareCount
-            FROM VoteResults
-            WHERE AgendaItem = @AgendaItem
-            GROUP BY VoteType";
-                    using (SqlCommand voteCmd = new SqlCommand(voteQuery, conn))
-                    {
-                        voteCmd.Parameters.AddWithValue("@AgendaItem", agendaItem);
+            SELECT ""VoteType"", SUM(""ShareCount"") AS TotalShareCount
+            FROM ""VoteResults""
+            WHERE ""AgendaItem"" = @AgendaItem
+            GROUP BY ""VoteType""";
 
-                        using (SqlDataReader reader = voteCmd.ExecuteReader())
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = voteQuery;
+
+                        var agendaParam = cmd.CreateParameter();
+                        agendaParam.ParameterName = "@AgendaItem";
+                        agendaParam.Value = agendaItem;
+                        cmd.Parameters.Add(agendaParam);
+
+                        using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
@@ -537,7 +612,7 @@ namespace Work1
             if (comboBox1.SelectedValue == null) return;
 
             // ถามผู้ใช้ว่ามั่นใจที่จะจบวาระหรือไม่
-                DialogResult confirmResult = MessageBox.Show(
+            DialogResult confirmResult = MessageBox.Show(
                 "คุณแน่ใจหรือไม่ที่จะจบวาระนี้?",
                 "ยืนยันการจบวาระ",
                 MessageBoxButtons.YesNo,
@@ -547,21 +622,36 @@ namespace Work1
                 return;
 
             int headerID = (int)comboBox1.SelectedValue;
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // ใช้ DbConnection และ DbCommand เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
-                conn.Open();
-                string updateQuery = "UPDATE HeaderTemplate SET IsAgendaClosed = 1 WHERE HeaderID = @HeaderID";
-                using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                try
                 {
-                    cmd.Parameters.AddWithValue("@HeaderID", headerID);
-                    cmd.ExecuteNonQuery();
+                    conn.Open();
+                    string updateQuery = "UPDATE \"HeaderTemplate\" SET \"IsAgendaClosed\" = 1 WHERE \"HeaderID\" = @HeaderID";
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = updateQuery;
+
+                        var headerParam = cmd.CreateParameter();
+                        headerParam.ParameterName = "@HeaderID";
+                        headerParam.Value = headerID;
+                        cmd.Parameters.Add(headerParam);
+
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    MessageBox.Show("บันทึกสำเร็จ");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("เกิดข้อผิดพลาด: " + ex.Message);
                 }
             }
 
-            // ปิดปุ่มและคอนโทรล
-            //DisableAgendaControls();
-
-            MessageBox.Show("บันทึกสำเร็จ");
             // Store the currently selected value
             var selectedValue = comboBox1.SelectedValue;
 
@@ -571,6 +661,7 @@ namespace Work1
             // Restore the selected value
             comboBox1.SelectedValue = selectedValue;
         }
+
         private void DisableAgendaControls()
         {
             btnEndAgenda.Enabled = false;
@@ -612,36 +703,62 @@ namespace Work1
             if (confirmResult == DialogResult.No)
                 return;
 
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // ใช้ DbConnection และ DbCommand เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
-                conn.Open();
-
-                foreach (DataGridViewRow row in dataGridView8.SelectedRows)
+                try
                 {
-                    if (!row.IsNewRow)
+                    conn.Open();
+
+                    foreach (DataGridViewRow row in dataGridView8.SelectedRows)
                     {
-                        string agendaItem = row.Cells["AgendaItem"].Value.ToString();
-                        string identifier = row.Cells["Identifier"].Value.ToString();
-                        string fullName = row.Cells["FullName"].Value.ToString();
-
-                        string deleteQuery = @"
-                DELETE FROM VoteResults 
-                WHERE AgendaItem = @AgendaItem AND Identifier = @Identifier AND FullName = @FullName";
-
-                        using (SqlCommand cmd = new SqlCommand(deleteQuery, conn))
+                        if (!row.IsNewRow)
                         {
-                            cmd.Parameters.AddWithValue("@AgendaItem", agendaItem);
-                            cmd.Parameters.AddWithValue("@Identifier", identifier);
-                            cmd.Parameters.AddWithValue("@FullName", fullName);
-                            cmd.ExecuteNonQuery();
-                        }
+                            string agendaItem = row.Cells["AgendaItem"].Value.ToString();
+                            string identifier = row.Cells["Identifier"].Value.ToString();
+                            string fullName = row.Cells["FullName"].Value.ToString();
 
-                        dataGridView8.Rows.Remove(row);
+                            string deleteQuery = @"
+                    DELETE FROM ""VoteResults"" 
+                    WHERE ""AgendaItem"" = @AgendaItem AND ""Identifier"" = @Identifier AND ""FullName"" = @FullName";
+
+                            using (var cmd = conn.CreateCommand())
+                            {
+                                cmd.CommandText = deleteQuery;
+
+                                var agendaParam = cmd.CreateParameter();
+                                agendaParam.ParameterName = "@AgendaItem";
+                                agendaParam.Value = agendaItem;
+                                cmd.Parameters.Add(agendaParam);
+
+                                var identifierParam = cmd.CreateParameter();
+                                identifierParam.ParameterName = "@Identifier";
+                                identifierParam.Value = identifier;
+                                cmd.Parameters.Add(identifierParam);
+
+                                var fullNameParam = cmd.CreateParameter();
+                                fullNameParam.ParameterName = "@FullName";
+                                fullNameParam.Value = fullName;
+                                cmd.Parameters.Add(fullNameParam);
+
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            dataGridView8.Rows.Remove(row);
+                        }
                     }
+
+                    MessageBox.Show("ลบข้อมูลเรียบร้อยแล้ว");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("เกิดข้อผิดพลาด: " + ex.Message);
                 }
             }
 
-            MessageBox.Show("ลบข้อมูลเรียบร้อยแล้ว");
             // Store the currently selected value
             var selectedValue = comboBox1.SelectedValue;
 

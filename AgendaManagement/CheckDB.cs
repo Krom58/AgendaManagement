@@ -13,6 +13,8 @@ using ThaiNationalIDCard;
 using PCSC;
 using PCSC.Iso7816;
 using DocumentFormat.OpenXml.Office2016.Drawing.Charts;
+using System.IO;
+using System.Data.Common;
 namespace Work1
 {
     public partial class CheckDB : Form
@@ -75,11 +77,16 @@ namespace Work1
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                var dbcfg = new DBConfig(iniPath);
+
+                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
 
-                    StringBuilder queryBuilder = new StringBuilder("SELECT * FROM PersonData WHERE 1=1");
+                    StringBuilder queryBuilder = new StringBuilder("SELECT * FROM \"PersonData\" ORDER BY \"Id\"");
 
                     if (!string.IsNullOrEmpty(n_first))
                     {
@@ -94,53 +101,67 @@ namespace Work1
                         queryBuilder.Append(" AND i_ref LIKE @i_ref");
                     }
 
-                    using (SqlCommand cmd = new SqlCommand(queryBuilder.ToString(), conn))
+                    using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
+                        cmd.CommandText = queryBuilder.ToString();
+
                         if (!string.IsNullOrEmpty(n_first))
                         {
-                            cmd.Parameters.AddWithValue("@n_first", "%" + n_first + "%");
+                            var param = cmd.CreateParameter();
+                            param.ParameterName = "@n_first";
+                            param.Value = "%" + n_first + "%";
+                            cmd.Parameters.Add(param);
                         }
                         if (!string.IsNullOrEmpty(n_last))
                         {
-                            cmd.Parameters.AddWithValue("@n_last", "%" + n_last + "%");
+                            var param = cmd.CreateParameter();
+                            param.ParameterName = "@n_last";
+                            param.Value = "%" + n_last + "%";
+                            cmd.Parameters.Add(param);
                         }
                         if (!string.IsNullOrEmpty(i_ref))
                         {
-                            cmd.Parameters.AddWithValue("@i_ref", "%" + i_ref + "%");
+                            var param = cmd.CreateParameter();
+                            param.ParameterName = "@i_ref";
+                            param.Value = "%" + i_ref + "%";
+                            cmd.Parameters.Add(param);
                         }
 
-                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-
-                        // Use Invoke to update the dataGridView on the UI thread
-                        dataGridView.Invoke((MethodInvoker)delegate
+                        using (var adapter = DbProviderFactories.GetFactory(conn).CreateDataAdapter())
                         {
-                            dataGridView.DataSource = dt;
-                            dataGridView.Columns["n_title"].HeaderText = "คำนำหน้า";
-                            dataGridView.Columns["n_first"].HeaderText = "ชื่อ";
-                            dataGridView.Columns["n_last"].HeaderText = "นามสกุล";
-                            dataGridView.Columns["q_share"].HeaderText = "หุ้น";
-                            dataGridView.Columns["i_ref"].HeaderText = "รหัสบัตรประชาชน";
-                            dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
-                            dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
-                            dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
-                            dataGridView.Columns["q_share"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-                            dataGridView.Columns["i_ref"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                            dataGridView.Columns["SelfCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                            dataGridView.Columns["ProxyCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                            dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-                            // ซ่อนคอลัมน์ Id
-                            dataGridView.Columns["Id"].Visible = false;
-                            dataGridView.Columns["RegStatus"].Visible = false;
-                            foreach (DataGridViewColumn col in dataGridView.Columns)
-                            {
-                                col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                            }
-                        });
+                            adapter.SelectCommand = cmd; // ใช้ DbCommand โดยตรง
+                            DataTable dt = new DataTable();
+                            adapter.Fill(dt);
 
-                        // ล้างข้อมูลในช่อง TextBox หลังจากการค้นหาเสร็จสิ้น
-                        ClearSearchFields();
+                            // Use Invoke to update the dataGridView on the UI thread
+                            dataGridView.Invoke((MethodInvoker)delegate
+                            {
+                                dataGridView.DataSource = dt;
+                                dataGridView.Columns["n_title"].HeaderText = "คำนำหน้า";
+                                dataGridView.Columns["n_first"].HeaderText = "ชื่อ";
+                                dataGridView.Columns["n_last"].HeaderText = "นามสกุล";
+                                dataGridView.Columns["q_share"].HeaderText = "หุ้น";
+                                dataGridView.Columns["i_ref"].HeaderText = "รหัสบัตรประชาชน";
+                                dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
+                                dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
+                                dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
+                                dataGridView.Columns["q_share"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                                dataGridView.Columns["i_ref"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                                dataGridView.Columns["SelfCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                                dataGridView.Columns["ProxyCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                                dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                                // ซ่อนคอลัมน์ Id
+                                dataGridView.Columns["Id"].Visible = false;
+                                dataGridView.Columns["RegStatus"].Visible = false;
+                                foreach (DataGridViewColumn col in dataGridView.Columns)
+                                {
+                                    col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                                }
+                            });
+
+                            // ล้างข้อมูลในช่อง TextBox หลังจากการค้นหาเสร็จสิ้น
+                            ClearSearchFields();
+                        }
                     }
                 }
             }
@@ -189,21 +210,46 @@ namespace Work1
                     string peopleCountInput = multiInputForm.PeopleCountInput;
                     string noteInput = multiInputForm.NoteInput;
                     // อัปเดทข้อมูลในตาราง PersonData โดยเซ็ตค่าในคอลัมน์ที่เกี่ยวข้องเป็น 1
-                    using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                    // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                    var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+                    var dbcfg = new DBConfig(iniPath);
+
+                    // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                    using (var conn = dbcfg.CreateConnection())
                     {
                         conn.Open();
                         string updateQuery = @"
-                        UPDATE PersonData
-                        SET RegStatus = N'ลงทะเบียนแล้ว',
-                            SelfCount = CASE WHEN @AttendType = N'มาเอง' THEN 1 ELSE SelfCount END,
-                            Proxycount = CASE WHEN @AttendType = N'มอบฉันทะ' THEN 1 ELSE Proxycount END,
-                            Note = @Note
-                        WHERE Id = @Id";
-                        using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                        UPDATE ""PersonData""
+                        SET ""RegStatus"" = N'ลงทะเบียนแล้ว',
+                            ""SelfCount"" = CASE
+                                                WHEN @AttendType = N'มาเอง' THEN 1 
+                                                WHEN @AttendType = N'มอบฉันทะ' THEN NULL
+                                            END,
+                            ""ProxyCount"" = CASE 
+                                                 WHEN @AttendType = N'มอบฉันทะ' THEN 1 
+                                                 WHEN @AttendType = N'มาเอง' THEN NULL 
+                                             END,
+                            ""Note"" = @Note
+                        WHERE ""Id"" = @Id";
+                        using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                         {
-                            cmd.Parameters.AddWithValue("@AttendType", attendChoice);
-                            cmd.Parameters.AddWithValue("@Note", noteInput);
-                            cmd.Parameters.AddWithValue("@Id", Id);
+                            cmd.CommandText = updateQuery;
+
+                            var param1 = cmd.CreateParameter();
+                            param1.ParameterName = "@AttendType";
+                            param1.Value = attendChoice;
+                            cmd.Parameters.Add(param1);
+
+                            var param2 = cmd.CreateParameter();
+                            param2.ParameterName = "@Note";
+                            param2.Value = noteInput;
+                            cmd.Parameters.Add(param2);
+
+                            var param3 = cmd.CreateParameter();
+                            param3.ParameterName = "@Id";
+                            param3.Value = Id;
+                            cmd.Parameters.Add(param3);
+
                             cmd.ExecuteNonQuery();
                         }
                     }
@@ -221,34 +267,44 @@ namespace Work1
         }
         private void LoadData()
         {
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string query = "SELECT * FROM PersonData ORDER BY Id";
-                using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
+                string query = "SELECT * FROM \"PersonData\" ORDER BY \"Id\"";
+                using (DbCommand cmd = conn.CreateCommand())
                 {
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    dataGridView.DataSource = dt;
-                    dataGridView.Columns["n_title"].HeaderText = "คำนำหน้า";
-                    dataGridView.Columns["n_first"].HeaderText = "ชื่อ";
-                    dataGridView.Columns["n_last"].HeaderText = "นามสกุล";
-                    dataGridView.Columns["q_share"].HeaderText = "หุ้น";
-                    dataGridView.Columns["i_ref"].HeaderText = "รหัสบัตรประชาชน";
-                    dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
-                    dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
-                    dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
-                    dataGridView.Columns["q_share"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-                    dataGridView.Columns["i_ref"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                    dataGridView.Columns["SelfCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                    dataGridView.Columns["ProxyCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                    dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-                    // ซ่อนคอลัมน์ Id
-                    dataGridView.Columns["Id"].Visible = false;
-                    dataGridView.Columns["RegStatus"].Visible = false;
-                    foreach (DataGridViewColumn col in dataGridView.Columns)
+                    cmd.CommandText = query;
+                    using (DbDataAdapter adapter = DbProviderFactories.GetFactory(conn).CreateDataAdapter())
                     {
-                        col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        adapter.SelectCommand = cmd;
+                        DataTable dt = new DataTable();
+                        adapter.Fill(dt);
+                        dataGridView.DataSource = dt;
+                        dataGridView.Columns["n_title"].HeaderText = "คำนำหน้า";
+                        dataGridView.Columns["n_first"].HeaderText = "ชื่อ";
+                        dataGridView.Columns["n_last"].HeaderText = "นามสกุล";
+                        dataGridView.Columns["q_share"].HeaderText = "หุ้น";
+                        dataGridView.Columns["i_ref"].HeaderText = "รหัสบัตรประชาชน";
+                        dataGridView.Columns["SelfCount"].HeaderText = "มาเอง";
+                        dataGridView.Columns["ProxyCount"].HeaderText = "มอบฉันทะ";
+                        dataGridView.Columns["Note"].HeaderText = "หมายเหตุ";
+                        dataGridView.Columns["q_share"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                        dataGridView.Columns["i_ref"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        dataGridView.Columns["SelfCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        dataGridView.Columns["ProxyCount"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                        // ซ่อนคอลัมน์ Id
+                        dataGridView.Columns["Id"].Visible = false;
+                        dataGridView.Columns["RegStatus"].Visible = false;
+                        foreach (DataGridViewColumn col in dataGridView.Columns)
+                        {
+                            col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        }
                     }
                 }
             }
@@ -259,14 +315,25 @@ namespace Work1
             string fullName = "";
             string shareCount = "";
 
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string queryPerson = "SELECT CONCAT(n_title, n_first, ' ', n_last) AS FullName, q_share, Note, Id FROM PersonData WHERE Id = @Id";
-                using (SqlCommand cmd = new SqlCommand(queryPerson, conn))
+                string queryPerson = "SELECT CONCAT(n_title, n_first, ' ', n_last) AS \"FullName\", \"q_share\", \"Note\", \"Id\" FROM \"PersonData\" WHERE \"Id\" = @Id";
+                using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
-                    cmd.Parameters.AddWithValue("@Id", Id);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    cmd.CommandText = queryPerson;
+
+                    var param = cmd.CreateParameter();
+                    param.ParameterName = "@Id";
+                    param.Value = Id;
+                    cmd.Parameters.Add(param);
+
+                    using (DbDataReader reader = cmd.ExecuteReader()) // Use DbDataReader instead of SqlDataReader
                     {
                         if (reader.Read())
                         {
@@ -290,16 +357,42 @@ namespace Work1
                     string identifier = GetIdentifierFromPersonId(Id, "B");
 
                     string insertQuery = @"
-                        INSERT INTO SelfRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
+                        INSERT INTO ""SelfRegistration"" (""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note"", ""Id"")
                         VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
-                    using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+                    using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
-                        cmd.Parameters.AddWithValue("@Identifier", identifier);
-                        cmd.Parameters.AddWithValue("@PeopleCount", peopleCount);
-                        cmd.Parameters.AddWithValue("@FullName", fullName);
-                        cmd.Parameters.AddWithValue("@ShareCount", shareCount);
-                        cmd.Parameters.AddWithValue("@Note", noteInput);
-                        cmd.Parameters.AddWithValue("@Id", Id);
+                        cmd.CommandText = insertQuery;
+
+                        var param1 = cmd.CreateParameter();
+                        param1.ParameterName = "@Identifier";
+                        param1.Value = identifier;
+                        cmd.Parameters.Add(param1);
+
+                        var param2 = cmd.CreateParameter();
+                        param2.ParameterName = "@PeopleCount";
+                        param2.Value = peopleCount;
+                        cmd.Parameters.Add(param2);
+
+                        var param3 = cmd.CreateParameter();
+                        param3.ParameterName = "@FullName";
+                        param3.Value = fullName;
+                        cmd.Parameters.Add(param3);
+
+                        var param4 = cmd.CreateParameter();
+                        param4.ParameterName = "@ShareCount";
+                        param4.Value = shareCount;
+                        cmd.Parameters.Add(param4);
+
+                        var param5 = cmd.CreateParameter();
+                        param5.ParameterName = "@Note";
+                        param5.Value = noteInput;
+                        cmd.Parameters.Add(param5);
+
+                        var param6 = cmd.CreateParameter();
+                        param6.ParameterName = "@Id";
+                        param6.Value = Id;
+                        cmd.Parameters.Add(param6);
+
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -309,16 +402,42 @@ namespace Work1
                     string identifier = GetIdentifierFromPersonId(Id, "P");
 
                     string insertQuery = @"
-                        INSERT INTO ProxyRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
+                        INSERT INTO ""ProxyRegistration"" (""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note"", ""Id"")
                         VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
-                    using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+                    using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
-                        cmd.Parameters.AddWithValue("@Identifier", identifier);
-                        cmd.Parameters.AddWithValue("@PeopleCount", peopleCount);
-                        cmd.Parameters.AddWithValue("@FullName", fullName);
-                        cmd.Parameters.AddWithValue("@ShareCount", shareCount);
-                        cmd.Parameters.AddWithValue("@Note", noteInput);
-                        cmd.Parameters.AddWithValue("@Id", Id);
+                        cmd.CommandText = insertQuery;
+
+                        var param1 = cmd.CreateParameter();
+                        param1.ParameterName = "@Identifier";
+                        param1.Value = identifier;
+                        cmd.Parameters.Add(param1);
+
+                        var param2 = cmd.CreateParameter();
+                        param2.ParameterName = "@PeopleCount";
+                        param2.Value = peopleCount;
+                        cmd.Parameters.Add(param2);
+
+                        var param3 = cmd.CreateParameter();
+                        param3.ParameterName = "@FullName";
+                        param3.Value = fullName;
+                        cmd.Parameters.Add(param3);
+
+                        var param4 = cmd.CreateParameter();
+                        param4.ParameterName = "@ShareCount";
+                        param4.Value = shareCount;
+                        cmd.Parameters.Add(param4);
+
+                        var param5 = cmd.CreateParameter();
+                        param5.ParameterName = "@Note";
+                        param5.Value = noteInput;
+                        cmd.Parameters.Add(param5);
+
+                        var param6 = cmd.CreateParameter();
+                        param6.ParameterName = "@Id";
+                        param6.Value = Id;
+                        cmd.Parameters.Add(param6);
+
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -405,22 +524,38 @@ namespace Work1
                 return;
             }
 
-            // ลบข้อมูลในตาราง SelfRegistration และ ProxyRegistration สำหรับบุคคลที่เลือก
-            using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+            // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+            var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
+            var dbcfg = new DBConfig(iniPath);
+
+            // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+            using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
 
-                string deleteSelf = "DELETE FROM SelfRegistration WHERE Id = @Id";
-                using (SqlCommand cmd = new SqlCommand(deleteSelf, conn))
+                string deleteSelf = "DELETE FROM \"SelfRegistration\" WHERE \"Id\" = @Id";
+                using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
-                    cmd.Parameters.AddWithValue("@Id", personId);
+                    cmd.CommandText = deleteSelf;
+
+                    var param = cmd.CreateParameter();
+                    param.ParameterName = "@Id";
+                    param.Value = personId;
+                    cmd.Parameters.Add(param);
+
                     cmd.ExecuteNonQuery();
                 }
 
-                string deleteProxy = "DELETE FROM ProxyRegistration WHERE Id = @Id";
-                using (SqlCommand cmd = new SqlCommand(deleteProxy, conn))
+                string deleteProxy = "DELETE FROM \"ProxyRegistration\" WHERE \"Id\" = @Id";
+                using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
-                    cmd.Parameters.AddWithValue("@Id", personId);
+                    cmd.CommandText = deleteProxy;
+
+                    var param = cmd.CreateParameter();
+                    param.ParameterName = "@Id";
+                    param.Value = personId;
+                    cmd.Parameters.Add(param);
+
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -439,21 +574,43 @@ namespace Work1
                     string noteInput = multiInputForm.NoteInput;
 
                     // อัปเดตสถานะใน PersonData ให้เป็น "ลงทะเบียนแล้ว" และอัปเดตคอลัมน์ SelfCount/ProxyCount ให้เป็น 1 ตามที่เลือก
-                    using (SqlConnection conn = new SqlConnection(DBConfig.connectionString))
+                    using (var conn = dbcfg.CreateConnection()) // Use DbConnection instead of SqlConnection
                     {
                         conn.Open();
                         string updatePersonQuery = @"
-                    UPDATE PersonData
-                    SET RegStatus = N'ลงทะเบียนแล้ว',
-                        SelfCount = CASE WHEN @AttendType = N'มาเอง' THEN 1 ELSE NULL END,
-                        ProxyCount = CASE WHEN @AttendType = N'มอบฉันทะ' THEN 1 ELSE NULL END,
-                        Note = @Note
-                    WHERE Id = @Id";
-                        using (SqlCommand cmd = new SqlCommand(updatePersonQuery, conn))
+                    UPDATE ""PersonData""
+                    SET ""RegStatus"" = N'ลงทะเบียนแล้ว',
+                            ""SelfCount"" = CASE
+                                                WHEN @AttendType = N'มาเอง' THEN 1 
+                                                WHEN @AttendType = N'มอบฉันทะ' THEN NULL 
+                                                ELSE NULL 
+                                            END,
+                            ""ProxyCount"" = CASE 
+                                                 WHEN @AttendType = N'มอบฉันทะ' THEN 1 
+                                                 WHEN @AttendType = N'มาเอง' THEN NULL 
+                                                 ELSE NULL 
+                                             END,
+                        ""Note"" = @Note
+                    WHERE ""Id"" = @Id";
+                        using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                         {
-                            cmd.Parameters.AddWithValue("@AttendType", attendChoice);
-                            cmd.Parameters.AddWithValue("@Note", noteInput);
-                            cmd.Parameters.AddWithValue("@Id", personId);
+                            cmd.CommandText = updatePersonQuery;
+
+                            var param1 = cmd.CreateParameter();
+                            param1.ParameterName = "@AttendType";
+                            param1.Value = attendChoice;
+                            cmd.Parameters.Add(param1);
+
+                            var param2 = cmd.CreateParameter();
+                            param2.ParameterName = "@Note";
+                            param2.Value = noteInput;
+                            cmd.Parameters.Add(param2);
+
+                            var param3 = cmd.CreateParameter();
+                            param3.ParameterName = "@Id";
+                            param3.Value = personId;
+                            cmd.Parameters.Add(param3);
+
                             cmd.ExecuteNonQuery();
                         }
                     }

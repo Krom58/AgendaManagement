@@ -7,6 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaManagement", "AgendaM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgendaDetail", "AgendaDetail\AgendaDetail.csproj", "{8CBC709D-6B15-4D53-8D39-F58ABF3CDE1A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		database_config.ini = database_config.ini
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
