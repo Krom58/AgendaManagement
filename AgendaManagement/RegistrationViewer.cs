@@ -61,14 +61,14 @@ namespace Work1
                 // นับจำนวนแถวใน SelfRegistration
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT COUNT(*) FROM \"SelfRegistration\"";
+                    cmd.CommandText = "SELECT COUNT(*) FROM SelfRegistration";
                     selfCount = Convert.ToInt32(cmd.ExecuteScalar());
                 }
 
                 // นับจำนวนแถวใน ProxyRegistration
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT COUNT(*) FROM \"ProxyRegistration\"";
+                    cmd.CommandText = "SELECT COUNT(*) FROM ProxyRegistration";
                     proxyCount = Convert.ToInt32(cmd.ExecuteScalar());
                 }
             }
@@ -105,9 +105,9 @@ namespace Work1
             {
                 conn.Open();
                 string query = @"
-            SELECT ""RegistrationID"", ""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note""
-            FROM ""SelfRegistration""
-            ORDER BY ""RegistrationID""";
+            SELECT RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note
+            FROM SelfRegistration
+            ORDER BY RegistrationID";
 
                 using (var adapter = dbcfg.Factory.CreateDataAdapter())
                 {
@@ -149,9 +149,9 @@ namespace Work1
             {
                 conn.Open();
                 string query = @"
-                                SELECT ""RegistrationID"", ""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note""
-                                FROM ""ProxyRegistration""
-                                ORDER BY ""RegistrationID""";
+                                SELECT RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note
+                                FROM ProxyRegistration
+                                ORDER BY RegistrationID";
 
                 using (var adapter = dbcfg.Factory.CreateDataAdapter())
                 {
@@ -197,14 +197,14 @@ namespace Work1
 
             // Query ดึงข้อมูลจากทั้ง SelfRegistration และ ProxyRegistration ด้วย UNION ALL
             string query = @"
-                            SELECT 'มาเอง' AS Type, ""RegistrationID"", ""Identifier"", ""PeopleCount"", CONCAT(n_title, n_first, ' ', n_last) AS ""FullName"", ""ShareCount"", ""Note""
-                            FROM ""SelfRegistration""
-                            WHERE ""FullName"" LIKE '%' || @FullName || '%'
+                            SELECT 'มาเอง' AS Type, RegistrationID, Identifier, PeopleCount, CONCAT(n_title, n_first, ' ', n_last) AS FullName, ShareCount, Note
+                            FROM SelfRegistration
+                            WHERE FullName LIKE '%' || @FullName || '%'
                             UNION ALL
-                            SELECT 'มอบฉันทะ' AS Type, ""RegistrationID"", ""Identifier"", ""PeopleCount"", CONCAT(n_title, n_first, ' ', n_last) AS ""FullName"", ""ShareCount"", ""Note""
-                            FROM ""ProxyRegistration""
-                            WHERE ""FullName"" LIKE '%' || @FullName || '%'
-                            ORDER BY ""FullName""";
+                            SELECT 'มอบฉันทะ' AS Type, RegistrationID, Identifier, PeopleCount, CONCAT(n_title, n_first, ' ', n_last) AS FullName, ShareCount, Note
+                            FROM ProxyRegistration
+                            WHERE FullName LIKE '%' || @FullName || '%'
+                            ORDER BY FullName";
 
             var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
             var dbcfg = new DBConfig(iniPath);

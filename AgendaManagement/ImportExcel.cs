@@ -102,7 +102,7 @@ namespace Work1
                 {
                     conn.Open();
 
-                    string deleteQuery = "DELETE FROM \"PersonData\"";
+                    string deleteQuery = "DELETE FROM PersonData";
                     using (var deleteCmd = conn.CreateCommand())
                     {
                         deleteCmd.CommandText = deleteQuery;
@@ -119,7 +119,7 @@ namespace Work1
                         string q_share = row.Cells["q_share"].Value?.ToString() ?? string.Empty;
                         string i_ref = row.Cells["i_ref"].Value?.ToString() ?? string.Empty;
 
-                        string query = "INSERT INTO \"PersonData\" (n_title, n_first, n_last, q_share, i_ref) VALUES (@n_title, @n_first, @n_last, @q_share, @i_ref)";
+                        string query = "INSERT INTO PersonData (n_title, n_first, n_last, q_share, i_ref) VALUES (@n_title, @n_first, @n_last, @q_share, @i_ref)";
                         using (var cmd = conn.CreateCommand())
                         {
                             cmd.CommandText = query;

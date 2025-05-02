@@ -64,7 +64,7 @@ namespace AgendaDetail
                 using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string query = "SELECT \"PeopleCount_Total\" FROM \"RegistrationSummary\"";
+                    string query = "SELECT PeopleCount_Total FROM RegistrationSummary";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = query;
@@ -100,9 +100,9 @@ namespace AgendaDetail
                 {
                     conn.Open();
                     string query = @"
-                SELECT ""HeaderID"", ""AgendaNumber"", ""AgendaTitle"", ""AgendaType"", ""qShareTotal"", ""peopleCountTotal""
-                FROM ""HeaderTemplate""
-                ORDER BY ""HeaderID""";
+                SELECT HeaderID, AgendaNumber, AgendaTitle, AgendaType, qShareTotal, peopleCountTotal
+                FROM HeaderTemplate
+                ORDER BY HeaderID";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = query;
@@ -184,10 +184,10 @@ namespace AgendaDetail
                 {
                     conn.Open();
                     string voteQuery = @"
-                SELECT ""VoteType"", SUM(""ShareCount"") AS ""TotalShareCount""
-                FROM ""VoteResults""
-                WHERE ""AgendaItem"" = @AgendaItem
-                GROUP BY ""VoteType""";
+                SELECT VoteType, SUM(ShareCount) AS TotalShareCount
+                FROM VoteResults
+                WHERE AgendaItem = @AgendaItem
+                GROUP BY VoteType";
                     using (DbCommand voteCmd = conn.CreateCommand())
                     {
                         voteCmd.CommandText = voteQuery;
@@ -200,8 +200,8 @@ namespace AgendaDetail
                         {
                             while (reader.Read())
                             {
-                                string voteType = reader["\"VoteType\""].ToString();
-                                long shareCount = reader["\"TotalShareCount\""] == DBNull.Value ? 0 : Convert.ToInt64(reader["\"TotalShareCount\""]);
+                                string voteType = reader["VoteType"].ToString();
+                                long shareCount = reader["TotalShareCount"] == DBNull.Value ? 0 : Convert.ToInt64(reader["TotalShareCount"]);
 
                                 switch (voteType)
                                 {

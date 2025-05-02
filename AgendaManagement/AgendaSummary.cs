@@ -64,7 +64,7 @@ namespace Work1
                 using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string query = "SELECT \"PeopleCount_Total\" FROM \"RegistrationSummary\"";
+                    string query = "SELECT PeopleCount_Total FROM RegistrationSummary";
                     using (var cmd = conn.CreateCommand()) // Use DbConnection's CreateCommand method
                     {
                         cmd.CommandText = query;
@@ -97,7 +97,7 @@ namespace Work1
             using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string query = "SELECT \"AgendaItem\", \"VoteType\", \"Identifier\", \"PeopleCount\", \"FullName\", \"ShareCount\" FROM \"VoteResults\" WHERE \"AgendaItem\" = @AgendaItem";
+                string query = "SELECT AgendaItem, VoteType, Identifier, PeopleCount, FullName, ShareCount FROM VoteResults WHERE AgendaItem = @AgendaItem";
                 using (var cmd = conn.CreateCommand()) // Use DbConnection's CreateCommand method
                 {
                     cmd.CommandText = query;
@@ -139,14 +139,14 @@ namespace Work1
             }
 
             string query = @"
-            SELECT 'มาเอง' AS Type, ""RegistrationID"", ""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note""
-            FROM ""SelfRegistration""
-            WHERE ""Identifier"" = @Identifier
+            SELECT 'มาเอง' AS Type, RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note
+            FROM SelfRegistration
+            WHERE Identifier = @Identifier
             UNION ALL
-            SELECT 'มอบฉันทะ' AS Type, ""RegistrationID"", ""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note""
-            FROM ""ProxyRegistration""
-            WHERE ""Identifier"" = @Identifier
-            ORDER BY ""FullName""";
+            SELECT 'มอบฉันทะ' AS Type, RegistrationID, Identifier, PeopleCount, FullName, ShareCount, Note
+            FROM ProxyRegistration
+            WHERE Identifier = @Identifier
+            ORDER BY FullName";
 
             var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
             var dbcfg = new DBConfig(iniPath);
@@ -259,8 +259,8 @@ namespace Work1
 
                     string checkQuery = @"
             SELECT COUNT(*) 
-            FROM ""VoteResults"" 
-            WHERE ""AgendaItem"" = @AgendaItem AND ""FullName"" = @FullName";
+            FROM VoteResults 
+            WHERE AgendaItem = @AgendaItem AND FullName = @FullName";
 
                     using (var checkCmd = conn.CreateCommand())
                     {
@@ -286,7 +286,7 @@ namespace Work1
                     }
 
                     string insertQuery = @"
-            INSERT INTO ""VoteResults"" (""AgendaItem"", ""VoteType"", ""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"")
+            INSERT INTO VoteResults (AgendaItem, VoteType, Identifier, PeopleCount, FullName, ShareCount)
             VALUES (@AgendaItem, @VoteType, @Identifier, @PeopleCount, @FullName, @ShareCount)";
 
                     using (var insertCmd = conn.CreateCommand())
@@ -344,14 +344,14 @@ namespace Work1
                 {
                     conn.Open();
                     string query = @"
-                    SELECT ""HeaderID"",
-                           ""AgendaNumber"",
-                           ""AgendaTitle"",
-                           ""AgendaType"",
-                           ""qShareTotal"",
-                           ""peopleCountTotal""
-                    FROM ""HeaderTemplate""
-                    ORDER BY ""HeaderID""";
+                    SELECT HeaderID,
+                           AgendaNumber,
+                           AgendaTitle,
+                           AgendaType,
+                           qShareTotal,
+                           peopleCountTotal
+                    FROM HeaderTemplate
+                    ORDER BY HeaderID";
 
                     using (var cmd = conn.CreateCommand())
                     {
@@ -395,7 +395,7 @@ namespace Work1
                 using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string checkQuery = "SELECT \"IsAgendaClosed\" FROM \"HeaderTemplate\" WHERE \"HeaderID\" = @HeaderID";
+                    string checkQuery = "SELECT IsAgendaClosed FROM HeaderTemplate WHERE HeaderID = @HeaderID";
                     using (var cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = checkQuery;
@@ -408,8 +408,12 @@ namespace Work1
                         object result = cmd.ExecuteScalar();
                         if (result != null && result != DBNull.Value)
                         {
-                            bool isAgendaClosed = Convert.ToBoolean(result);
-                            btnEndAgenda.BackColor = isAgendaClosed ? Color.LightCoral : Color.LightGreen;
+                            btnEndAgenda.BackColor = Color.LightCoral;
+                        }
+                        else
+                        {
+                            // Handle the case where no data is returned
+                            btnEndAgenda.BackColor = Color.LightGreen;
                         }
                     }
 
@@ -498,10 +502,10 @@ namespace Work1
                     conn.Open();
 
                     string voteQuery = @"
-            SELECT ""VoteType"", SUM(""ShareCount"") AS TotalShareCount
-            FROM ""VoteResults""
-            WHERE ""AgendaItem"" = @AgendaItem
-            GROUP BY ""VoteType""";
+            SELECT VoteType, SUM(ShareCount) AS TotalShareCount
+            FROM VoteResults
+            WHERE AgendaItem = @AgendaItem
+            GROUP BY VoteType";
 
                     using (var cmd = conn.CreateCommand())
                     {
@@ -631,7 +635,7 @@ namespace Work1
                 try
                 {
                     conn.Open();
-                    string updateQuery = "UPDATE \"HeaderTemplate\" SET \"IsAgendaClosed\" = 1 WHERE \"HeaderID\" = @HeaderID";
+                    string updateQuery = "UPDATE HeaderTemplate SET IsAgendaClosed = true WHERE HeaderID = @HeaderID";
                     using (var cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = updateQuery;
@@ -722,8 +726,8 @@ namespace Work1
                             string fullName = row.Cells["FullName"].Value.ToString();
 
                             string deleteQuery = @"
-                    DELETE FROM ""VoteResults"" 
-                    WHERE ""AgendaItem"" = @AgendaItem AND ""Identifier"" = @Identifier AND ""FullName"" = @FullName";
+                    DELETE FROM VoteResults 
+                    WHERE AgendaItem = @AgendaItem AND Identifier = @Identifier AND FullName = @FullName";
 
                             using (var cmd = conn.CreateCommand())
                             {

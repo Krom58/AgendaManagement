@@ -86,7 +86,7 @@ namespace Work1
                 {
                     conn.Open();
 
-                    StringBuilder queryBuilder = new StringBuilder("SELECT * FROM \"PersonData\" ORDER BY \"Id\"");
+                    StringBuilder queryBuilder = new StringBuilder("SELECT * FROM PersonData ORDER BY Id");
 
                     if (!string.IsNullOrEmpty(n_first))
                     {
@@ -219,18 +219,18 @@ namespace Work1
                     {
                         conn.Open();
                         string updateQuery = @"
-                        UPDATE ""PersonData""
-                        SET ""RegStatus"" = N'ลงทะเบียนแล้ว',
-                            ""SelfCount"" = CASE
+                        UPDATE PersonData
+                        SET RegStatus = N'ลงทะเบียนแล้ว',
+                            SelfCount = CASE
                                                 WHEN @AttendType = N'มาเอง' THEN 1 
                                                 WHEN @AttendType = N'มอบฉันทะ' THEN NULL
                                             END,
-                            ""ProxyCount"" = CASE 
+                            ProxyCount = CASE 
                                                  WHEN @AttendType = N'มอบฉันทะ' THEN 1 
                                                  WHEN @AttendType = N'มาเอง' THEN NULL 
                                              END,
-                            ""Note"" = @Note
-                        WHERE ""Id"" = @Id";
+                            Note = @Note
+                        WHERE Id = @Id";
                         using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                         {
                             cmd.CommandText = updateQuery;
@@ -275,7 +275,7 @@ namespace Work1
             using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string query = "SELECT * FROM \"PersonData\" ORDER BY \"Id\"";
+                string query = "SELECT * FROM PersonData ORDER BY Id";
                 using (DbCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = query;
@@ -323,7 +323,7 @@ namespace Work1
             using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string queryPerson = "SELECT CONCAT(n_title, n_first, ' ', n_last) AS \"FullName\", \"q_share\", \"Note\", \"Id\" FROM \"PersonData\" WHERE \"Id\" = @Id";
+                string queryPerson = "SELECT CONCAT(n_title, n_first, ' ', n_last) AS FullName, q_share, Note, Id FROM PersonData WHERE Id = @Id";
                 using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
                     cmd.CommandText = queryPerson;
@@ -357,7 +357,7 @@ namespace Work1
                     string identifier = GetIdentifierFromPersonId(Id, "B");
 
                     string insertQuery = @"
-                        INSERT INTO ""SelfRegistration"" (""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note"", ""Id"")
+                        INSERT INTO SelfRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
                         VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
                     using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
@@ -402,7 +402,7 @@ namespace Work1
                     string identifier = GetIdentifierFromPersonId(Id, "P");
 
                     string insertQuery = @"
-                        INSERT INTO ""ProxyRegistration"" (""Identifier"", ""PeopleCount"", ""FullName"", ""ShareCount"", ""Note"", ""Id"")
+                        INSERT INTO ProxyRegistration (Identifier, PeopleCount, FullName, ShareCount, Note, Id)
                         VALUES (@Identifier, @PeopleCount, @FullName, @ShareCount, @Note, @Id)";
                     using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
@@ -533,7 +533,7 @@ namespace Work1
             {
                 conn.Open();
 
-                string deleteSelf = "DELETE FROM \"SelfRegistration\" WHERE \"Id\" = @Id";
+                string deleteSelf = "DELETE FROM SelfRegistration WHERE Id = @Id";
                 using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
                     cmd.CommandText = deleteSelf;
@@ -546,7 +546,7 @@ namespace Work1
                     cmd.ExecuteNonQuery();
                 }
 
-                string deleteProxy = "DELETE FROM \"ProxyRegistration\" WHERE \"Id\" = @Id";
+                string deleteProxy = "DELETE FROM ProxyRegistration WHERE Id = @Id";
                 using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
                     cmd.CommandText = deleteProxy;
@@ -578,20 +578,20 @@ namespace Work1
                     {
                         conn.Open();
                         string updatePersonQuery = @"
-                    UPDATE ""PersonData""
-                    SET ""RegStatus"" = N'ลงทะเบียนแล้ว',
-                            ""SelfCount"" = CASE
+                    UPDATE PersonData
+                    SET RegStatus = N'ลงทะเบียนแล้ว',
+                            SelfCount = CASE
                                                 WHEN @AttendType = N'มาเอง' THEN 1 
                                                 WHEN @AttendType = N'มอบฉันทะ' THEN NULL 
                                                 ELSE NULL 
                                             END,
-                            ""ProxyCount"" = CASE 
+                            ProxyCount = CASE 
                                                  WHEN @AttendType = N'มอบฉันทะ' THEN 1 
                                                  WHEN @AttendType = N'มาเอง' THEN NULL 
                                                  ELSE NULL 
                                              END,
-                        ""Note"" = @Note
-                    WHERE ""Id"" = @Id";
+                        Note = @Note
+                    WHERE Id = @Id";
                         using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                         {
                             cmd.CommandText = updatePersonQuery;

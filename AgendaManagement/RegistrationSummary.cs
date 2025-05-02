@@ -73,11 +73,11 @@ namespace Work1
                 conn.Open();
 
                 string sqlInsert = @"
-        INSERT INTO ""RegistrationSummary"" (
-            ""MeetingDate"",
-            ""PeopleCount_Self"", ""QShare_Self"",
-            ""PeopleCount_Proxy"", ""QShare_Proxy"",
-            ""PeopleCount_Total"", ""QShare_Total""
+        INSERT INTO RegistrationSummary (
+            MeetingDate,
+            PeopleCount_Self, QShare_Self,
+            PeopleCount_Proxy, QShare_Proxy,
+            PeopleCount_Total, QShare_Total
         )
         VALUES (
             @MeetingDate,
@@ -128,7 +128,7 @@ namespace Work1
                     cmd.ExecuteNonQuery();
                 }
 
-                string checkQuery = "SELECT COUNT(*) FROM \"HeaderTemplate\" WHERE \"HeaderID\" = @HeaderID AND \"IsRegistered\" = 'บันทึกแล้ว'";
+                string checkQuery = "SELECT COUNT(*) FROM HeaderTemplate WHERE HeaderID = @HeaderID AND IsRegistered = 'บันทึกแล้ว'";
                 using (var checkCmd = conn.CreateCommand())
                 {
                     checkCmd.CommandText = checkQuery;
@@ -152,16 +152,16 @@ namespace Work1
                 }
 
                 string updateQuery = @"
-        UPDATE ""HeaderTemplate""
-        SET ""peopleCountTotal"" = @peopleCountTotal, 
-            ""qShareTotal"" = @qShareTotal, 
-            ""PeopleCount_Self"" = @PeopleCount_Self,
-            ""PeopleCount_Proxy"" = @PeopleCount_Proxy,
-            ""QShare_Self"" = @QShare_Self,
-            ""QShare_Proxy"" = @QShare_Proxy,
-            ""IsSummaryComplete"" = @IsSummaryComplete,
-            ""IsRegistered"" = 'บันทึกแล้ว'
-        WHERE ""HeaderID"" = @HeaderID";
+        UPDATE HeaderTemplate
+        SET peopleCountTotal = @peopleCountTotal, 
+            qShareTotal = @qShareTotal, 
+            PeopleCount_Self = @PeopleCount_Self,
+            PeopleCount_Proxy = @PeopleCount_Proxy,
+            QShare_Self = @QShare_Self,
+            QShare_Proxy = @QShare_Proxy,
+            IsSummaryComplete = @IsSummaryComplete,
+            IsRegistered = 'บันทึกแล้ว'
+        WHERE HeaderID = @HeaderID";
                 using (var updateCmd = conn.CreateCommand())
                 {
                     updateCmd.CommandText = updateQuery;
@@ -253,7 +253,7 @@ namespace Work1
 
                     using (var cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "SELECT COUNT(*) AS \"PeopleCount_Self\", SUM(\"ShareCount\"::BIGINT) AS \"QShare_Self\" FROM \"SelfRegistration\"";
+                        cmd.CommandText = "SELECT COUNT(*) AS PeopleCount_Self, SUM(ShareCount::BIGINT) AS QShare_Self FROM SelfRegistration";
                         using (var reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
@@ -266,7 +266,7 @@ namespace Work1
 
                     using (var cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "SELECT COUNT(*) AS \"PeopleCount_Proxy\", SUM(\"ShareCount\"::BIGINT) AS \"QShare_Proxy\" FROM \"ProxyRegistration\"";
+                        cmd.CommandText = "SELECT COUNT(*) AS PeopleCount_Proxy, SUM(ShareCount::BIGINT) AS QShare_Proxy FROM ProxyRegistration";
                         using (var reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
@@ -279,7 +279,7 @@ namespace Work1
 
                     using (var cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "SELECT SUM(\"q_share\"::BIGINT) AS \"TotalQShare\" FROM \"PersonData\"";
+                        cmd.CommandText = "SELECT SUM(q_share::BIGINT) AS TotalQShare FROM PersonData";
                         {
                             using (var reader = cmd.ExecuteReader())
                             {
@@ -314,7 +314,7 @@ namespace Work1
             {
                 conn.Open();
                 // แก้คำสั่ง SQL โดยใช้ "::BIGINT" แทน CONVERT(BIGINT, ...)
-                string query = "SELECT SUM(\"q_share\"::BIGINT) FROM \"PersonData\"";
+                string query = "SELECT SUM(q_share::BIGINT) FROM PersonData";
                 using (var cmd = conn.CreateCommand()) // ใช้ DbCommand แทน SqlCommand
                 {
                     cmd.CommandText = query;
@@ -374,14 +374,14 @@ namespace Work1
                 using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string checkQuery = "SELECT COUNT(*) FROM \"HeaderTemplate\"";
+                    string checkQuery = "SELECT COUNT(*) FROM HeaderTemplate";
                     using (DbCommand checkCmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
                         checkCmd.CommandText = checkQuery;
                         int count = Convert.ToInt32(checkCmd.ExecuteScalar());
                         if (count > 0)
                         {
-                            string query = "SELECT \"HeaderID\", \"AgendaNumber\", \"AgendaTitle\" FROM \"HeaderTemplate\" ORDER BY \"HeaderID\"";
+                            string query = "SELECT HeaderID, AgendaNumber, AgendaTitle FROM HeaderTemplate ORDER BY HeaderID";
                             using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                             {
                                 cmd.CommandText = query;
@@ -444,7 +444,7 @@ namespace Work1
             using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string checkQuery = "SELECT COUNT(*) FROM \"HeaderTemplate\" WHERE \"HeaderID\" = @HeaderID AND \"IsRegistered\" = 'บันทึกแล้ว'";
+                string checkQuery = "SELECT COUNT(*) FROM HeaderTemplate WHERE HeaderID = @HeaderID AND IsRegistered = 'บันทึกแล้ว'";
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = checkQuery;
@@ -496,9 +496,9 @@ namespace Work1
             {
                 conn.Open();
                 string query = @"
-        SELECT ""peopleCountTotal"", ""qShareTotal"", ""PeopleCount_Self"", ""PeopleCount_Proxy"", ""QShare_Self"", ""QShare_Proxy""
-        FROM ""HeaderTemplate""
-        WHERE ""HeaderID"" = @HeaderID";
+        SELECT peopleCountTotal, qShareTotal, PeopleCount_Self, PeopleCount_Proxy, QShare_Self, QShare_Proxy
+        FROM HeaderTemplate
+        WHERE HeaderID = @HeaderID";
                 using (DbCommand cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
                     cmd.CommandText = query;

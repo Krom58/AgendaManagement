@@ -361,9 +361,11 @@
     </Compile>
     <EmbeddedResource Include="Agenda.resx">
       <DependentUpon>Agenda.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="AgendaSummary.resx">
       <DependentUpon>AgendaSummary.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="CheckDB.resx">
       <DependentUpon>CheckDB.cs</DependentUpon>

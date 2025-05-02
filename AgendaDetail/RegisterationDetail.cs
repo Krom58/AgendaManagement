@@ -58,7 +58,7 @@ namespace AgendaDetail
                     conn.Open();
 
                     // Load data from SelfRegistration
-                    string querySelf = "SELECT COUNT(*) AS \"PeopleCount_Self\", SUM(\"ShareCount\"::BIGINT) AS \"QShare_Self\" FROM \"SelfRegistration\"";
+                    string querySelf = "SELECT COUNT(*) AS PeopleCount_Self, SUM(ShareCount::BIGINT) AS QShare_Self FROM SelfRegistration";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = querySelf;
@@ -76,7 +76,7 @@ namespace AgendaDetail
                     Debug.WriteLine($"SelfRegistration - PeopleCount: {peopleCountSelf}, ShareCount: {shareCountSelf}");
 
                     // Load data from ProxyRegistration
-                    string queryProxy = "SELECT COUNT(*) AS \"PeopleCount_Proxy\", SUM(\"ShareCount\"::BIGINT) AS \"QShare_Proxy\" FROM \"ProxyRegistration\"";
+                    string queryProxy = "SELECT COUNT(*) AS PeopleCount_Proxy, SUM(ShareCount::BIGINT) AS QShare_Proxy FROM ProxyRegistration";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = queryProxy;
@@ -94,7 +94,7 @@ namespace AgendaDetail
                     Debug.WriteLine($"ProxyRegistration - PeopleCount: {peopleCountProxy}, ShareCount: {shareCountProxy}");
 
                     // Load total shares from PersonData
-                    string queryTotalShares = "SELECT SUM(\"q_share\"::BIGINT) AS \"TotalQShare\" FROM \"PersonData\"";
+                    string queryTotalShares = "SELECT SUM(q_share::BIGINT) AS TotalQShare FROM PersonData";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = queryTotalShares;

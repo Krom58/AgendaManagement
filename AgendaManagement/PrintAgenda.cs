@@ -166,9 +166,9 @@ namespace Work1
 
                 // ดึงข้อมูลจาก PersonData สำหรับ personId
                 string queryPerson = @"
-                SELECT CONCAT(n_title, n_first, ' ', n_last) AS ""FullName"", ""q_share""
-                FROM ""PersonData""
-                WHERE ""Id"" = @Id";
+                SELECT CONCAT(n_title, n_first, ' ', n_last) AS FullName, q_share
+                FROM PersonData
+                WHERE Id = @Id";
                 using (DbCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = queryPerson;
@@ -191,7 +191,7 @@ namespace Work1
                 if (attendChoice == "มาเอง")
                 {
                     // ดึง Identifier จากตาราง SelfRegistration สำหรับ personId
-                    string queryReg = "SELECT \"Identifier\" FROM \"SelfRegistration\" WHERE \"Id\" = @Id";
+                    string queryReg = "SELECT Identifier FROM SelfRegistration WHERE Id = @Id";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = queryReg;
@@ -207,7 +207,7 @@ namespace Work1
                 else if (attendChoice == "มอบฉันทะ")
                 {
                     // ดึง Identifier จากตาราง ProxyRegistration สำหรับ personId
-                    string queryReg = "SELECT \"Identifier\" FROM \"ProxyRegistration\" WHERE \"Id\" = @Id";
+                    string queryReg = "SELECT Identifier FROM ProxyRegistration WHERE Id = @Id";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = queryReg;
@@ -223,9 +223,9 @@ namespace Work1
 
                 // ดึงข้อมูล Template จากตาราง HeaderTemplate ทั้งหมด
                 string queryTemplate = @"
-                SELECT ""MeetingNumber"", ""AgendaNumber"", ""AgendaTitle""
-                FROM ""HeaderTemplate""
-                ORDER BY ""HeaderID""";
+                SELECT MeetingNumber, AgendaNumber, AgendaTitle
+                FROM HeaderTemplate
+                ORDER BY HeaderID";
                 using (DbCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = queryTemplate;
@@ -256,7 +256,7 @@ namespace Work1
                             documentTemplate.AppendLine($"จำนวนหุ้น: {q_share}");
                             documentTemplate.AppendLine("   [  ] เห็นด้วย           [  ] ไม่เห็นด้วย         [  ] งดออกเสียง");
                             documentTemplate.AppendLine("     (Approved)         (Disapproved)     (Abstained)");
-                            documentTemplate.AppendLine("");
+                            documentTemplate.AppendLine();
                             // ตรวจสอบค่า attendChoice และแสดงข้อความที่เหมาะสม
                             if (attendChoice == "มาเอง")
                             {

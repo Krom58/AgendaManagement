@@ -100,7 +100,7 @@ namespace Work1
                 using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
-                    string query = @"INSERT INTO ""HeaderTemplate"" (""MeetingNumber"", ""AgendaNumber"", ""AgendaTitle"", ""AgendaType"")
+                    string query = @"INSERT INTO HeaderTemplate (MeetingNumber, AgendaNumber, AgendaTitle, AgendaType)
                              VALUES (@MeetingNumber, @AgendaNumber, @AgendaTitle, @AgendaType)";
                     using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
@@ -153,7 +153,7 @@ namespace Work1
             using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string query = "SELECT COUNT(*) FROM \"HeaderTemplate\" WHERE \"AgendaNumber\" = @AgendaNumber";
+                string query = "SELECT COUNT(*) FROM HeaderTemplate WHERE AgendaNumber = @AgendaNumber";
                 using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
                     cmd.CommandText = query;
@@ -188,7 +188,7 @@ namespace Work1
                 {
                     conn.Open();
 
-                    string query = "SELECT \"HeaderID\", \"MeetingNumber\", \"AgendaNumber\", \"AgendaTitle\" FROM \"HeaderTemplate\" ORDER BY \"HeaderID\"";
+                    string query = "SELECT HeaderID, MeetingNumber, AgendaNumber, AgendaTitle FROM HeaderTemplate ORDER BY HeaderID";
                     using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
                         cmd.CommandText = query;
@@ -248,7 +248,7 @@ namespace Work1
             using (var conn = dbcfg.CreateConnection())
             {
                 conn.Open();
-                string query = "DELETE FROM \"HeaderTemplate\" WHERE \"HeaderID\" = @HeaderID";
+                string query = "DELETE FROM HeaderTemplate WHERE HeaderID = @HeaderID";
                 using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                 {
                     cmd.CommandText = query;
