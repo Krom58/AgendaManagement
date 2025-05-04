@@ -36,6 +36,7 @@
             this.Setting = new System.Windows.Forms.Button();
             this.AgendaSummary = new System.Windows.Forms.Button();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.Config = new System.Windows.Forms.Button();
             this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -139,6 +140,7 @@
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tableLayoutPanel1.Controls.Add(this.Config, 2, 0);
             this.tableLayoutPanel1.Controls.Add(this.AgendaSummary, 3, 2);
             this.tableLayoutPanel1.Controls.Add(this.Setting, 0, 0);
             this.tableLayoutPanel1.Controls.Add(this.RegistrationSummary, 2, 2);
@@ -157,6 +159,20 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(734, 461);
             this.tableLayoutPanel1.TabIndex = 7;
+            // 
+            // Config
+            // 
+            this.Config.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.Config.Font = new System.Drawing.Font("Angsana New", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Config.Location = new System.Drawing.Point(371, 5);
+            this.Config.Margin = new System.Windows.Forms.Padding(5);
+            this.Config.Name = "Config";
+            this.Config.Size = new System.Drawing.Size(173, 105);
+            this.Config.TabIndex = 7;
+            this.Config.Text = "Config";
+            this.Config.UseVisualStyleBackColor = true;
+            this.Config.Visible = false;
+            this.Config.Click += new System.EventHandler(this.Config_Click);
             // 
             // Main
             // 
@@ -183,6 +199,7 @@
         private System.Windows.Forms.Button Setting;
         private System.Windows.Forms.Button AgendaSummary;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+        private System.Windows.Forms.Button Config;
     }
 }
 

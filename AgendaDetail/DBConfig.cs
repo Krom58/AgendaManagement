@@ -98,6 +98,8 @@ namespace Work1
             {
                 if (Config.Type.Trim().ToLowerInvariant() == "postgresql")
                     return NpgsqlFactory.Instance;
+                if (Config.Type.Trim().ToLowerInvariant() == "mysql")
+                    return MySql.Data.MySqlClient.MySqlClientFactory.Instance;
 
                 return DbProviderFactories.GetFactory(Config.Provider);
             }

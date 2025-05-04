@@ -7,14 +7,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 namespace Work1
 {
     public partial class Main: Form
     {
+        private readonly string _iniPath;
         public Main()
         {
             InitializeComponent();
+            _iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
         }
         private void ImportExcel_Click(object sender, EventArgs e)
         {
@@ -74,11 +77,61 @@ namespace Work1
         {
             ImportExcel.Visible = !ImportExcel.Visible;
             Agenda.Visible = !Agenda.Visible;
+            Config.Visible = !Config.Visible;
         }
 
         private void Main_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void Config_Click(object sender, EventArgs e)
+        {
+            // ขอ path ของโฟลเดอร์ที่ exe รันอยู่
+            string exeFolder = AppDomain.CurrentDomain.BaseDirectory;
+
+            // ขึ้นไปสามระดับ (bin\Debug\net7.0-windows → AgendaManagement)
+            string projectFolder = Path.GetFullPath(Path.Combine(exeFolder, @"..\..\..\"));
+
+            // ผนวกชื่อไฟล์ ini ในโฟลเดอร์โปรเจกต์
+            string iniFilePath = Path.Combine(projectFolder, "database_config.ini");
+
+            if (!File.Exists(_iniPath))
+            {
+                MessageBox.Show(
+                    $"ไม่พบไฟล์ database_config.ini ที่\r\n{_iniPath}",
+                    "ข้อผิดพลาด",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                // เปิด Notepad ให้แก้ไฟล์
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "notepad.exe",
+                    Arguments = $"\"{_iniPath}\"",
+                    UseShellExecute = true
+                };
+                var proc = System.Diagnostics.Process.Start(psi);
+
+                // รอให้ Notepad ปิดก่อน แล้ว restart แอป
+                proc.WaitForExit();
+
+                // รีสตาร์ททั้งโปรแกรม
+                Application.Restart();
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"เกิดข้อผิดพลาดในการเปิดไฟล์: {ex.Message}",
+                    "ข้อผิดพลาด",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
     }
 }

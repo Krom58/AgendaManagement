@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Data.SqlClient;
 using System.IO;
 using System.Data.Common;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace Work1
 {
@@ -251,42 +252,59 @@ namespace Work1
                     int pCountSelf = 0, pCountProxy = 0;
                     long qCountSelf = 0, qCountProxy = 0, totalQShareFromPerson = 0;
 
+                    string GetQuery(string databaseType, string tableName, string sumColumn)
+                    {
+                        switch (databaseType.ToLower())
+                        {
+                            case "mysql":
+                            case "mariadb":
+                                return $"SELECT COUNT(*) AS PeopleCount, SUM(CAST({sumColumn} AS SIGNED)) AS QShare FROM {tableName}";
+                            case "postgresql":
+                                return $"SELECT COUNT(*) AS PeopleCount, SUM(CAST({sumColumn} AS BIGINT)) AS QShare FROM {tableName}";
+                            case "mssql":
+                                return $"SELECT COUNT(*) AS PeopleCount, SUM(CAST({sumColumn} AS BIGINT)) AS QShare FROM {tableName}";
+                            default:
+                                throw new NotSupportedException($"Database type '{databaseType}' not supported");
+                        }
+                    }
+
+                    string dbType = dbcfg.Config.Type;
+
+                    // ตัวอย่างการดึงข้อมูลแบบ Dynamic Query
                     using (var cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "SELECT COUNT(*) AS PeopleCount_Self, SUM(ShareCount::BIGINT) AS QShare_Self FROM SelfRegistration";
+                        cmd.CommandText = GetQuery(dbType, "SelfRegistration", "ShareCount");
                         using (var reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
-                                pCountSelf = reader["PeopleCount_Self"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount_Self"]);
-                                qCountSelf = reader["QShare_Self"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare_Self"]);
+                                pCountSelf = reader["PeopleCount"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount"]);
+                                qCountSelf = reader["QShare"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare"]);
                             }
                         }
                     }
 
                     using (var cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "SELECT COUNT(*) AS PeopleCount_Proxy, SUM(ShareCount::BIGINT) AS QShare_Proxy FROM ProxyRegistration";
+                        cmd.CommandText = GetQuery(dbType, "ProxyRegistration", "ShareCount");
                         using (var reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
-                                pCountProxy = reader["PeopleCount_Proxy"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount_Proxy"]);
-                                qCountProxy = reader["QShare_Proxy"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare_Proxy"]);
+                                pCountProxy = reader["PeopleCount"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount"]);
+                                qCountProxy = reader["QShare"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare"]);
                             }
                         }
                     }
 
                     using (var cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "SELECT SUM(q_share::BIGINT) AS TotalQShare FROM PersonData";
+                        cmd.CommandText = GetQuery(dbType, "PersonData", "q_share");
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            using (var reader = cmd.ExecuteReader())
+                            if (reader.Read())
                             {
-                                if (reader.Read())
-                                {
-                                    totalQShareFromPerson = reader["TotalQShare"] == DBNull.Value ? 0 : Convert.ToInt64(reader["TotalQShare"]);
-                                }
+                                totalQShareFromPerson = reader["QShare"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare"]);
                             }
                         }
                     }
@@ -313,9 +331,30 @@ namespace Work1
             using (var conn = dbcfgForPreview.CreateConnection())
             {
                 conn.Open();
-                // แก้คำสั่ง SQL โดยใช้ "::BIGINT" แทน CONVERT(BIGINT, ...)
-                string query = "SELECT SUM(q_share::BIGINT) FROM PersonData";
-                using (var cmd = conn.CreateCommand()) // ใช้ DbCommand แทน SqlCommand
+
+                // กำหนดประเภทของฐานข้อมูลจาก Config
+                string dbType = dbcfgForPreview.Config.Type;
+
+                // เลือกคำสั่ง SQL ที่เหมาะสมตามฐานข้อมูล
+                string query;
+                switch (dbType.ToLower())
+                {
+                    case "mysql":
+                    case "mariadb":
+                        query = "SELECT SUM(CAST(q_share AS SIGNED)) FROM PersonData";
+                        break;
+                    case "mssql":
+                        query = "SELECT SUM(CAST(q_share AS BIGINT)) FROM PersonData";
+                        break;
+                    case "postgresql":
+                        query = "SELECT SUM(CAST(q_share AS BIGINT)) FROM PersonData";
+                        break;
+                    default:
+                        throw new NotSupportedException($"Database type '{dbType}' not supported");
+                }
+
+
+                using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = query;
                     totalQShareGlobal = Convert.ToInt64(cmd.ExecuteScalar() ?? 0);

@@ -48,17 +48,60 @@ namespace AgendaDetail
                 int peopleCountSelf = 0, peopleCountProxy = 0;
                 long shareCountSelf = 0, shareCountProxy = 0, totalShares = 0;
 
-                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                // 1) สร้าง DBConfig instance
                 var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
                 var dbcfg = new DBConfigDetail(iniPath);
 
-                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
                 using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
 
-                    // Load data from SelfRegistration
-                    string querySelf = "SELECT COUNT(*) AS PeopleCount_Self, SUM(ShareCount::BIGINT) AS QShare_Self FROM SelfRegistration";
+                    // 2) หาชนิดฐานข้อมูลจาก config
+                    string dbType = dbcfg.Config.Type.ToLower();
+
+                    // 3) กำหนด expression สำหรับ CAST ShareCount
+                    string castShareCount;
+                    switch (dbType)
+                    {
+                        case "postgresql":
+                            castShareCount = "CAST(ShareCount AS BIGINT)";
+                            break;
+                        case "mysql":
+                        case "mariadb":
+                            castShareCount = "CAST(ShareCount AS SIGNED)";
+                            break;
+                        case "mssql":
+                            castShareCount = "CAST(ShareCount AS BIGINT)";
+                            break;
+                        default:
+                            throw new NotSupportedException($"Database type '{dbType}' not supported");
+                    }
+
+                    // 4) กำหนด expression สำหรับ CAST q_share
+                    string castQShare;
+                    switch (dbType)
+                    {
+                        case "postgresql":
+                            castQShare = "CAST(q_share AS BIGINT)";
+                            break;
+                        case "mysql":
+                        case "mariadb":
+                            castQShare = "CAST(q_share AS SIGNED)";
+                            break;
+                        case "mssql":
+                            castQShare = "CAST(q_share AS BIGINT)";
+                            break;
+                        default:
+                            throw new NotSupportedException($"Database type '{dbType}' not supported");
+                    }
+
+                    // --- Load SelfRegistration ---
+                    string querySelf = $@"
+                SELECT 
+                    COUNT(*) AS PeopleCount_Self,
+                    SUM({castShareCount}) AS QShare_Self
+                FROM SelfRegistration";
+
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = querySelf;
@@ -66,17 +109,19 @@ namespace AgendaDetail
                         {
                             if (reader.Read())
                             {
-                                peopleCountSelf = reader["PeopleCount_Self"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount_Self"]);
-                                shareCountSelf = reader["QShare_Self"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare_Self"]);
+                                peopleCountSelf = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                                shareCountSelf = reader.IsDBNull(1) ? 0 : reader.GetInt64(1);
                             }
                         }
                     }
 
-                    // Debug output
-                    Debug.WriteLine($"SelfRegistration - PeopleCount: {peopleCountSelf}, ShareCount: {shareCountSelf}");
+                    // --- Load ProxyRegistration ---
+                    string queryProxy = $@"
+                SELECT 
+                    COUNT(*) AS PeopleCount_Proxy,
+                    SUM({castShareCount}) AS QShare_Proxy
+                FROM ProxyRegistration";
 
-                    // Load data from ProxyRegistration
-                    string queryProxy = "SELECT COUNT(*) AS PeopleCount_Proxy, SUM(ShareCount::BIGINT) AS QShare_Proxy FROM ProxyRegistration";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = queryProxy;
@@ -84,28 +129,26 @@ namespace AgendaDetail
                         {
                             if (reader.Read())
                             {
-                                peopleCountProxy = reader["PeopleCount_Proxy"] == DBNull.Value ? 0 : Convert.ToInt32(reader["PeopleCount_Proxy"]);
-                                shareCountProxy = reader["QShare_Proxy"] == DBNull.Value ? 0 : Convert.ToInt64(reader["QShare_Proxy"]);
+                                peopleCountProxy = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                                shareCountProxy = reader.IsDBNull(1) ? 0 : reader.GetInt64(1);
                             }
                         }
                     }
 
-                    // Debug output
-                    Debug.WriteLine($"ProxyRegistration - PeopleCount: {peopleCountProxy}, ShareCount: {shareCountProxy}");
+                    // --- Load PersonData total shares ---
+                    string queryTotalShares = $@"
+                SELECT SUM({castQShare}) AS TotalQShare
+                FROM PersonData";
 
-                    // Load total shares from PersonData
-                    string queryTotalShares = "SELECT SUM(q_share::BIGINT) AS TotalQShare FROM PersonData";
                     using (DbCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = queryTotalShares;
-                        totalShares = Convert.ToInt64(cmd.ExecuteScalar() ?? 0);
+                        object result = cmd.ExecuteScalar();
+                        totalShares = (result == null || result == DBNull.Value) ? 0 : Convert.ToInt64(result);
                     }
-
-                    // Debug output
-                    Debug.WriteLine($"PersonData - TotalShares: {totalShares}");
                 }
 
-                // Set label texts
+                // --- อัปเดต UI ---
                 label7.Text = peopleCountSelf.ToString();
                 label8.Text = peopleCountProxy.ToString();
                 label9.Text = shareCountSelf.ToString("N0");
@@ -114,24 +157,23 @@ namespace AgendaDetail
                 label14.Text = (shareCountSelf + shareCountProxy).ToString("N0");
                 label17.Text = totalShares.ToString("N0");
 
-                // Calculate percentages
+                // คำนวณเปอร์เซ็นต์
                 double percentSelf = totalShares > 0 ? (double)shareCountSelf / totalShares * 100 : 0;
                 double percentProxy = totalShares > 0 ? (double)shareCountProxy / totalShares * 100 : 0;
                 double percentTotal = percentSelf + percentProxy;
 
-                label11.Text = percentSelf.ToString("F2") + "%";
-                label12.Text = percentProxy.ToString("F2") + "%";
-                label15.Text = percentTotal.ToString("F2") + "%";
+                label11.Text = $"{percentSelf:F2}%";
+                label12.Text = $"{percentProxy:F2}%";
+                label15.Text = $"{percentTotal:F2}%";
 
                 double qShareTotalValue = double.Parse(label14.Text, System.Globalization.NumberStyles.AllowThousands);
                 double qShareGlobal = double.Parse(label17.Text, System.Globalization.NumberStyles.AllowThousands);
                 double percentQShare = qShareGlobal > 0 ? (qShareTotalValue / qShareGlobal) * 100 : 0;
-                label18.Text = percentQShare.ToString("F2") + "%";
+                label18.Text = $"{percentQShare:F2}%";
 
                 double percentDifference = percentTotal - percentQShare;
-                label19.Text = percentDifference.ToString("F2") + "%";
+                label19.Text = $"{percentDifference:F2}%";
 
-                // Debug output
                 Debug.WriteLine($"Percentages - Self: {percentSelf}%, Proxy: {percentProxy}%, Total: {percentTotal}%");
             }
             catch (Exception ex)
