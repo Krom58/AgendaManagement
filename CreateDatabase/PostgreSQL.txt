@@ -1,0 +1,313 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.4
+-- Dumped by pg_dump version 17.4
+
+-- Started on 2025-05-04 19:25:18
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 219 (class 1259 OID 16603)
+-- Name: headertemplate; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.headertemplate (
+    headerid integer NOT NULL,
+    meetingnumber character varying(50),
+    agendanumber character varying(50),
+    agendatitle character varying(255),
+    peoplecounttotal integer,
+    qsharetotal bigint,
+    isregistered character varying(50),
+    peoplecount_self integer,
+    peoplecount_proxy integer,
+    qshare_self bigint,
+    qshare_proxy bigint,
+    issummarycomplete boolean,
+    isagendaclosed boolean,
+    agendatype integer
+);
+
+
+ALTER TABLE public.headertemplate OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 16632)
+-- Name: HeaderTemplate_HeaderID_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.headertemplate ALTER COLUMN headerid ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public."HeaderTemplate_HeaderID_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 218 (class 1259 OID 16596)
+-- Name: persondata; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.persondata (
+    id integer NOT NULL,
+    n_title character varying(50),
+    n_first character varying(255),
+    n_last character varying(255),
+    q_share character varying(255),
+    i_ref character varying(255),
+    selfcount character varying(255),
+    proxycount character varying(255),
+    regstatus character varying(50),
+    note character varying(255)
+);
+
+
+ALTER TABLE public.persondata OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1259 OID 16625)
+-- Name: PersonData_Id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.persondata ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public."PersonData_Id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 217 (class 1259 OID 16591)
+-- Name: proxyregistration; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.proxyregistration (
+    registrationid integer NOT NULL,
+    identifier character varying(10) NOT NULL,
+    peoplecount integer NOT NULL,
+    fullname character varying(100) NOT NULL,
+    sharecount character varying(50) NOT NULL,
+    note character varying(255),
+    id integer NOT NULL
+);
+
+
+ALTER TABLE public.proxyregistration OWNER TO postgres;
+
+--
+-- TOC entry 225 (class 1259 OID 16633)
+-- Name: ProxyRegistration_RegistrationID_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.proxyregistration ALTER COLUMN registrationid ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public."ProxyRegistration_RegistrationID_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 220 (class 1259 OID 16608)
+-- Name: registrationsummary; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.registrationsummary (
+    summaryid integer NOT NULL,
+    meetingdate timestamp with time zone,
+    peoplecount_self integer,
+    qshare_self bigint,
+    peoplecount_proxy integer,
+    qshare_proxy bigint,
+    peoplecount_total integer,
+    qshare_total bigint,
+    createddate timestamp with time zone
+);
+
+
+ALTER TABLE public.registrationsummary OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1259 OID 16634)
+-- Name: RegistrationSummary_SummaryID_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.registrationsummary ALTER COLUMN summaryid ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public."RegistrationSummary_SummaryID_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 221 (class 1259 OID 16613)
+-- Name: selfregistration; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.selfregistration (
+    registrationid integer NOT NULL,
+    identifier character varying(10) NOT NULL,
+    peoplecount integer NOT NULL,
+    fullname character varying(100) NOT NULL,
+    sharecount character varying(50) NOT NULL,
+    note character varying(255),
+    id integer NOT NULL
+);
+
+
+ALTER TABLE public.selfregistration OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1259 OID 16635)
+-- Name: SelfRegistration_RegistrationID_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.selfregistration ALTER COLUMN registrationid ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public."SelfRegistration_RegistrationID_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 222 (class 1259 OID 16618)
+-- Name: voteresults; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.voteresults (
+    id integer NOT NULL,
+    agendaitem character varying(255),
+    votetype character varying(50),
+    identifier character varying(50),
+    peoplecount integer,
+    fullname character varying(255),
+    sharecount bigint
+);
+
+
+ALTER TABLE public.voteresults OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 16636)
+-- Name: VoteResults_Id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.voteresults ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public."VoteResults_Id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 4772 (class 2606 OID 16607)
+-- Name: headertemplate headertemplate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.headertemplate
+    ADD CONSTRAINT headertemplate_pkey PRIMARY KEY (headerid);
+
+
+--
+-- TOC entry 4770 (class 2606 OID 16602)
+-- Name: persondata persondata_pkey1; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.persondata
+    ADD CONSTRAINT persondata_pkey1 PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4768 (class 2606 OID 16595)
+-- Name: proxyregistration proxyregistration_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.proxyregistration
+    ADD CONSTRAINT proxyregistration_pkey PRIMARY KEY (registrationid);
+
+
+--
+-- TOC entry 4774 (class 2606 OID 16612)
+-- Name: registrationsummary registrationsummary_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.registrationsummary
+    ADD CONSTRAINT registrationsummary_pkey PRIMARY KEY (summaryid);
+
+
+--
+-- TOC entry 4776 (class 2606 OID 16617)
+-- Name: selfregistration selfregistration_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.selfregistration
+    ADD CONSTRAINT selfregistration_pkey PRIMARY KEY (registrationid);
+
+
+--
+-- TOC entry 4778 (class 2606 OID 16624)
+-- Name: voteresults voteresults_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.voteresults
+    ADD CONSTRAINT voteresults_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4780 (class 2606 OID 16658)
+-- Name: selfregistration id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.selfregistration
+    ADD CONSTRAINT id FOREIGN KEY (id) REFERENCES public.persondata(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+--
+-- TOC entry 4779 (class 2606 OID 16663)
+-- Name: proxyregistration id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.proxyregistration
+    ADD CONSTRAINT id FOREIGN KEY (id) REFERENCES public.persondata(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+-- Completed on 2025-05-04 19:25:18
+
+--
+-- PostgreSQL database dump complete
+--
+
