@@ -61,3 +61,10 @@
    ```bash
    git clone https://github.com/yourusername/agenda-management.git
    cd agenda-management
+
+## รูปตอนไปติดตั้งโปรแกรม
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/876725fd-e4ab-4daf-83e9-341fedcb1af8"
+       width="520"
+       alt="รูปตอนไปติดตั้งโปรแกรมที่โรงแรม" />
+</p>
