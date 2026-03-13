@@ -86,20 +86,27 @@ namespace Work1
                 {
                     conn.Open();
 
-                    StringBuilder queryBuilder = new StringBuilder("SELECT * FROM PersonData ORDER BY Id");
-
+                    var whereClauses = new List<string>();
                     if (!string.IsNullOrEmpty(n_first))
                     {
-                        queryBuilder.Append(" AND n_first LIKE @n_first");
+                        whereClauses.Add("n_first LIKE @n_first");
                     }
                     if (!string.IsNullOrEmpty(n_last))
                     {
-                        queryBuilder.Append(" AND n_last LIKE @n_last");
+                        whereClauses.Add("n_last LIKE @n_last");
                     }
                     if (!string.IsNullOrEmpty(i_ref))
                     {
-                        queryBuilder.Append(" AND i_ref LIKE @i_ref");
+                        whereClauses.Add("i_ref LIKE @i_ref");
                     }
+
+                    StringBuilder queryBuilder = new StringBuilder("SELECT * FROM PersonData");
+                    if (whereClauses.Count > 0)
+                    {
+                        queryBuilder.Append(" WHERE ");
+                        queryBuilder.Append(string.Join(" AND ", whereClauses));
+                    }
+                    queryBuilder.Append(" ORDER BY Id");
 
                     using (var cmd = conn.CreateCommand()) // Use DbCommand instead of SqlCommand
                     {
