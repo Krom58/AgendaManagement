@@ -1,0 +1,229 @@
+USE [master]
+GO
+/****** Object:  Database [ExcelDataDB]    Script Date: 05/05/2025 3:33:45 PM ******/
+CREATE DATABASE [ExcelDataDB]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'ExcelDataDB', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSET\MSSQL\DATA\ExcelDataDB.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+ LOG ON 
+( NAME = N'ExcelDataDB_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLSET\MSSQL\DATA\ExcelDataDB_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+ WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
+GO
+ALTER DATABASE [ExcelDataDB] SET COMPATIBILITY_LEVEL = 160
+GO
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [ExcelDataDB].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+ALTER DATABASE [ExcelDataDB] SET ANSI_NULL_DEFAULT OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET ANSI_NULLS OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET ANSI_PADDING OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET ANSI_WARNINGS OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET ARITHABORT OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET AUTO_CLOSE ON 
+GO
+ALTER DATABASE [ExcelDataDB] SET AUTO_SHRINK OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET AUTO_UPDATE_STATISTICS ON 
+GO
+ALTER DATABASE [ExcelDataDB] SET CURSOR_CLOSE_ON_COMMIT OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET CURSOR_DEFAULT  GLOBAL 
+GO
+ALTER DATABASE [ExcelDataDB] SET CONCAT_NULL_YIELDS_NULL OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET NUMERIC_ROUNDABORT OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET QUOTED_IDENTIFIER OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET RECURSIVE_TRIGGERS OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET  DISABLE_BROKER 
+GO
+ALTER DATABASE [ExcelDataDB] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET DATE_CORRELATION_OPTIMIZATION OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET TRUSTWORTHY OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET ALLOW_SNAPSHOT_ISOLATION OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET PARAMETERIZATION SIMPLE 
+GO
+ALTER DATABASE [ExcelDataDB] SET READ_COMMITTED_SNAPSHOT OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET HONOR_BROKER_PRIORITY OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET RECOVERY SIMPLE 
+GO
+ALTER DATABASE [ExcelDataDB] SET  MULTI_USER 
+GO
+ALTER DATABASE [ExcelDataDB] SET PAGE_VERIFY CHECKSUM  
+GO
+ALTER DATABASE [ExcelDataDB] SET DB_CHAINING OFF 
+GO
+ALTER DATABASE [ExcelDataDB] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [ExcelDataDB] SET TARGET_RECOVERY_TIME = 60 SECONDS 
+GO
+ALTER DATABASE [ExcelDataDB] SET DELAYED_DURABILITY = DISABLED 
+GO
+ALTER DATABASE [ExcelDataDB] SET ACCELERATED_DATABASE_RECOVERY = OFF  
+GO
+ALTER DATABASE [ExcelDataDB] SET QUERY_STORE = ON
+GO
+ALTER DATABASE [ExcelDataDB] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
+GO
+USE [ExcelDataDB]
+GO
+/****** Object:  User [User]    Script Date: 05/05/2025 3:33:45 PM ******/
+CREATE USER [User] FOR LOGIN [User] WITH DEFAULT_SCHEMA=[dbo]
+GO
+ALTER ROLE [db_datareader] ADD MEMBER [User]
+GO
+ALTER ROLE [db_datawriter] ADD MEMBER [User]
+GO
+/****** Object:  Table [dbo].[HeaderTemplate]    Script Date: 05/05/2025 3:33:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[HeaderTemplate](
+	[HeaderID] [int] IDENTITY(1,1) NOT NULL,
+	[MeetingNumber] [nvarchar](50) NULL,
+	[AgendaNumber] [nvarchar](50) NULL,
+	[AgendaTitle] [nvarchar](255) NULL,
+	[peopleCountTotal] [int] NULL,
+	[qShareTotal] [bigint] NULL,
+	[IsRegistered] [nvarchar](50) NULL,
+	[PeopleCount_Self] [int] NULL,
+	[PeopleCount_Proxy] [int] NULL,
+	[QShare_Self] [bigint] NULL,
+	[QShare_Proxy] [bigint] NULL,
+	[IsSummaryComplete] [bit] NULL,
+	[IsAgendaClosed] [bit] NOT NULL,
+	[AgendaType] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[HeaderID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[PersonData]    Script Date: 05/05/2025 3:33:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PersonData](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[n_title] [nvarchar](50) NULL,
+	[n_first] [nvarchar](255) NULL,
+	[n_last] [nvarchar](255) NULL,
+	[q_share] [nvarchar](255) NULL,
+	[i_ref] [nvarchar](255) NULL,
+	[SelfCount] [nvarchar](255) NULL,
+	[ProxyCount] [nvarchar](255) NULL,
+	[RegStatus] [nvarchar](50) NULL,
+	[Note] [nvarchar](255) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ProxyRegistration]    Script Date: 05/05/2025 3:33:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ProxyRegistration](
+	[RegistrationID] [int] IDENTITY(1,1) NOT NULL,
+	[Identifier] [nvarchar](10) NOT NULL,
+	[PeopleCount] [int] NOT NULL,
+	[FullName] [nvarchar](100) NOT NULL,
+	[ShareCount] [nvarchar](50) NOT NULL,
+	[Note] [nvarchar](255) NULL,
+	[Id] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[RegistrationID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[RegistrationSummary]    Script Date: 05/05/2025 3:33:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RegistrationSummary](
+	[SummaryID] [int] IDENTITY(1,1) NOT NULL,
+	[MeetingDate] [datetime] NULL,
+	[PeopleCount_Self] [int] NULL,
+	[QShare_Self] [bigint] NULL,
+	[PeopleCount_Proxy] [int] NULL,
+	[QShare_Proxy] [bigint] NULL,
+	[PeopleCount_Total] [int] NULL,
+	[QShare_Total] [bigint] NULL,
+	[CreatedDate] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[SummaryID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[SelfRegistration]    Script Date: 05/05/2025 3:33:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[SelfRegistration](
+	[RegistrationID] [int] IDENTITY(1,1) NOT NULL,
+	[Identifier] [nvarchar](10) NOT NULL,
+	[PeopleCount] [int] NOT NULL,
+	[FullName] [nvarchar](100) NOT NULL,
+	[ShareCount] [nvarchar](50) NOT NULL,
+	[Note] [nvarchar](255) NULL,
+	[Id] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[RegistrationID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[VoteResults]    Script Date: 05/05/2025 3:33:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[VoteResults](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[AgendaItem] [nvarchar](255) NULL,
+	[VoteType] [nvarchar](50) NULL,
+	[Identifier] [nvarchar](50) NULL,
+	[PeopleCount] [int] NULL,
+	[FullName] [nvarchar](255) NULL,
+	[ShareCount] [bigint] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[HeaderTemplate] ADD  DEFAULT ((0)) FOR [IsSummaryComplete]
+GO
+ALTER TABLE [dbo].[HeaderTemplate] ADD  CONSTRAINT [DF_HeaderTemplate_IsAgendaClosed]  DEFAULT ((0)) FOR [IsAgendaClosed]
+GO
+ALTER TABLE [dbo].[HeaderTemplate] ADD  CONSTRAINT [DF_HeaderTemplate_AgendaType]  DEFAULT ((2)) FOR [AgendaType]
+GO
+ALTER TABLE [dbo].[RegistrationSummary] ADD  DEFAULT (getdate()) FOR [CreatedDate]
+GO
+USE [master]
+GO
+ALTER DATABASE [ExcelDataDB] SET  READ_WRITE 
+GO
