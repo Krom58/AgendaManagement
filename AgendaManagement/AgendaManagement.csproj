@@ -311,6 +311,7 @@
     <Compile Include="CheckDB.Designer.cs">
       <DependentUpon>CheckDB.cs</DependentUpon>
     </Compile>
+    <Compile Include="DataGridViewHelper.cs" />
     <Compile Include="DBConfig.cs" />
     <Compile Include="FormRegistrationChoice.cs">
       <SubType>Form</SubType>
@@ -398,6 +399,9 @@
     <EmbeddedResource Include="RegistrationViewer.resx">
       <DependentUpon>RegistrationViewer.cs</DependentUpon>
     </EmbeddedResource>
+    <Content Include="database_config.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

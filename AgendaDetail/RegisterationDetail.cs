@@ -18,29 +18,28 @@ namespace AgendaDetail
 {
     public partial class RegisterationDetail : Form
     {
-        private Timer refreshTimer; // Add a Timer
         public RegisterationDetail()
         {
             InitializeComponent();
-            InitializeTimer();
         }
 
         private void RegisterationDetail_Load(object sender, EventArgs e)
         {
             LoadRegistrationData();
         }
-        private void InitializeTimer()
+
+        private void RefreshCurrentPage()
         {
-            refreshTimer = new Timer();
-            refreshTimer.Interval = 3000; // Set the interval to 3 seconds
-            refreshTimer.Tick += new EventHandler(RefreshTimer_Tick);
-            refreshTimer.Start(); // Start the timer
+            try
+            {
+                LoadRegistrationData();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error refreshing page: {ex.Message}");
+            }
         }
 
-        private void RefreshTimer_Tick(object sender, EventArgs e)
-        {
-            LoadRegistrationData(); // Refresh the data
-        }
         private void LoadRegistrationData()
         {
             try
@@ -184,9 +183,13 @@ namespace AgendaDetail
 
         private void btnNext_Click(object sender, EventArgs e)
         {
-            AgendaDetail agendaDetailForm = new AgendaDetail();
-            agendaDetailForm.Show();
+            // รีเฟรชก่อนเปลี่ยนหน้า
+            RefreshCurrentPage();
+
+            // ไปหน้า AgendaDetail
             this.Hide();
+            AgendaDetail agendaDetail = new AgendaDetail();
+            agendaDetail.Show();
         }
     }
 }

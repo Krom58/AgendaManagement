@@ -19,25 +19,10 @@ namespace AgendaDetail
         private bool isSwapped = false; // ตัวแปรสถานะสำหรับการสลับ label (AgendaType 1)
         private DataTable dtHeaders;    // DataTable สำหรับเก็บข้อมูลวาระ (HeaderTemplate)
         private int currentAgendaIndex = 0; // ดัชนีวาระที่เลือกอยู่
-        private Timer refreshTimer; // Timer สำหรับรีเฟรชฟอร์ม
 
         public AgendaDetail()
         {
             InitializeComponent();
-            InitializeTimer(); // เรียกใช้การตั้งค่า Timer
-        }
-
-        private void InitializeTimer()
-        {
-            refreshTimer = new Timer();
-            refreshTimer.Interval = 3000; // ตั้งค่าให้ Timer ทำงานทุกๆ 3 วินาที (3000 มิลลิวินาที)
-            refreshTimer.Tick += new EventHandler(RefreshTimer_Tick);
-            refreshTimer.Start(); // เริ่มการทำงานของ Timer
-        }
-
-        private void RefreshTimer_Tick(object sender, EventArgs e)
-        {
-            UpdateAgendaDisplay(); // เรียกใช้ฟังก์ชันเพื่อรีเฟรชข้อมูลในฟอร์ม
         }
 
         private void AgendaDetail_Load(object sender, EventArgs e)
@@ -291,15 +276,23 @@ namespace AgendaDetail
         private void btnBack_Click(object sender, EventArgs e)
         {
             if (dtHeaders == null || dtHeaders.Rows.Count == 0)
+            {
+                // Navigate to RegisterationDetail page
+                this.Hide();
+                RegisterationDetail regDetail = new RegisterationDetail();
+                regDetail.Show();
                 return;
+            }
+            
             if (currentAgendaIndex > 0)
             {
                 currentAgendaIndex--;
-                UpdateAgendaDisplay();
+                // รีเฟรชข้อมูลเมื่อเปลี่ยนหน้า
+                RefreshCurrentPage();
             }
             else
             {
-                // Navigate to the RegiterationDetail page
+                // Navigate to RegisterationDetail page
                 this.Hide();
                 RegisterationDetail regDetail = new RegisterationDetail();
                 regDetail.Show();
@@ -310,14 +303,36 @@ namespace AgendaDetail
         {
             if (dtHeaders == null || dtHeaders.Rows.Count == 0)
                 return;
+                
             if (currentAgendaIndex < dtHeaders.Rows.Count - 1)
             {
                 currentAgendaIndex++;
-                UpdateAgendaDisplay();
+                // รีเฟรชข้อมูลเมื่อเปลี่ยนหน้า
+                RefreshCurrentPage();
             }
             else
             {
                 MessageBox.Show("นี่คือวาระสุดท้ายแล้ว");
+            }
+        }
+
+        // เพิ่ม method สำหรับรีเฟรชหน้าปัจจุบัน
+        private void RefreshCurrentPage()
+        {
+            try
+            {
+                // โหลดข้อมูลวาระใหม่
+                LoadHeaderDataForNavigation();
+                
+                // โหลดจำนวนคนรวมใหม่
+                LoadPeopleCountTotal();
+                
+                // อัพเดทการแสดงผลวาระ
+                UpdateAgendaDisplay();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error refreshing page: {ex.Message}");
             }
         }
 
