@@ -16,13 +16,26 @@ namespace AgendaDetail
 {
     public partial class AgendaDetail : Form
     {
-        private bool isSwapped = false; // ตัวแปรสถานะสำหรับการสลับ label (AgendaType 1)
         private DataTable dtHeaders;    // DataTable สำหรับเก็บข้อมูลวาระ (HeaderTemplate)
         private int currentAgendaIndex = 0; // ดัชนีวาระที่เลือกอยู่
+        private System.Windows.Forms.Timer refreshTimer; // Timer สำหรับ auto-refresh
+        private int lastAgendaType = -1; // เก็บ AgendaType ล่าสุดเพื่อตรวจสอบการเปลี่ยนแปลง
 
         public AgendaDetail()
         {
             InitializeComponent();
+            
+            // ตั้งค่า Timer สำหรับ auto-refresh ทุก 3 วินาที
+            refreshTimer = new System.Windows.Forms.Timer();
+            refreshTimer.Interval = 3000; // 3000 milliseconds = 3 วินาที
+            refreshTimer.Tick += RefreshTimer_Tick;
+            refreshTimer.Start();
+        }
+
+        private void RefreshTimer_Tick(object sender, EventArgs e)
+        {
+            // เรียก method RefreshCurrentPage ทุกๆ 3 วินาที
+            RefreshCurrentPage();
         }
 
         private void AgendaDetail_Load(object sender, EventArgs e)
@@ -110,21 +123,29 @@ namespace AgendaDetail
 
         private void AdjustControlsForAgendaType(int agendaType)
         {
-            if (agendaType == 1 && !isSwapped)
-            {
-                SwapLabels(label23, label21);
-                SwapLabels(label5, label9);
-                SwapLabels(label11, label13);
+            // ถ้า AgendaType ไม่เปลี่ยน ไม่ต้องทำอะไร
+            if (agendaType == lastAgendaType)
+                return;
 
+            // รีเซ็ตตำแหน่งก่อนเสมอ
+            ResetLabelsToDefault();
+
+            // ถ้า AgendaType = 1 ให้สลับตำแหน่ง
+            if (agendaType == 1)
+            {
+                // สลับตำแหน่ง label ที่แสดงค่า
+                SwapLabels(label5, label9);   // งดออกเสียง (label5) <-> รวม (label9)
+                SwapLabels(label11, label13); // % งดออกเสียง (label11) <-> % รวม (label13)
+                
+                // สลับตำแหน่ง label หัวข้อ
+                SwapLabels(label23, label21); // หัวข้อ "งดออกเสียง" <-> หัวข้อ "รวม"
+                
+                // ซ่อนเปอร์เซ็นต์งดออกเสียงสำหรับ AgendaType 1
                 label11.Text = "-";
+            }
 
-                isSwapped = true;
-            }
-            else if (agendaType == 2 && isSwapped)
-            {
-                ResetLabels();
-                isSwapped = false;
-            }
+            // บันทึก AgendaType ปัจจุบัน
+            lastAgendaType = agendaType;
         }
 
         private void SwapLabels(Label label1, Label label2)
@@ -134,16 +155,18 @@ namespace AgendaDetail
             label2.Location = tempLocation;
         }
 
-        private void ResetLabels()
+        private void ResetLabelsToDefault()
         {
-            label23.Location = new Point(503, 643);
-            label21.Location = new Point(503, 725);
-            label5.Location = new Point(852, 643);
-            label9.Location = new Point(852, 725);
-            label11.Location = new Point(1152, 643);
-            label13.Location = new Point(1152, 725);
+            // รีเซ็ตตำแหน่งเริ่มต้นของทุก label
+            label23.Location = new Point(503, 643);  // หัวข้อ "งดออกเสียง"
+            label21.Location = new Point(503, 725);  // หัวข้อ "รวม"
+            label5.Location = new Point(852, 643);   // ค่า งดออกเสียง
+            label9.Location = new Point(852, 725);   // ค่า รวม
+            label11.Location = new Point(1152, 643); // % งดออกเสียง
+            label13.Location = new Point(1152, 725); // % รวม
 
-            label11.Text = "0.0000%";
+            // รีเซ็ตค่า text
+            label11.Text = "0.00%";
         }
 
         private void CalculateAndDisplayVoteSummary()
@@ -212,28 +235,41 @@ namespace AgendaDetail
                 if (dtHeaders.Rows[currentAgendaIndex]["AgendaType"].ToString() == "1")
                 {
                     adjustedApprove = qShareTotal - (disapprove + invalidBallot);
-                    label11.Text = "-";
                     totalVotesSum = adjustedApprove + disapprove + invalidBallot;
+                    
+                    // ตั้งค่า label ตามตำแหน่งปัจจุบัน (หลังการสลับแล้ว)
+                    label6.Text = disapprove.ToString("N0");
+                    label5.Text = totalVotesSum.ToString("N0");  // label5 จะอยู่ที่ตำแหน่ง "รวม" หลังสลับ
+                    label8.Text = invalidBallot.ToString("N0");
+                    label7.Text = adjustedApprove.ToString("N0");
+                    label9.Text = abstain.ToString("N0");        // label9 จะอยู่ที่ตำแหน่ง "งดออกเสียง" หลังสลับ
+                    
+                    label10.Text = CalculatePercentage(disapprove, qShareTotal);
+                    label11.Text = "-";                          // label11 จะอยู่ที่ตำแหน่ง "% รวม" หลังสลับ (แสดง -)
+                    label12.Text = CalculatePercentage(invalidBallot, qShareTotal);
+                    label18.Text = CalculatePercentage(adjustedApprove, qShareTotal);
+                    label13.Text = CalculatePercentage(abstain, qShareTotal); // label13 จะอยู่ที่ตำแหน่ง "% งดออกเสียง" หลังสลับ
                 }
-                else
+                else // AgendaType = 2 (แบบปกติ รวมงดออกเสียง)
                 {
                     adjustedApprove = qShareTotal - (disapprove + abstain + invalidBallot);
-                    label11.Text = CalculatePercentage(abstain, qShareTotal);
                     totalVotesSum = adjustedApprove + disapprove + invalidBallot + abstain;
+                    
+                    label6.Text = disapprove.ToString("N0");
+                    label5.Text = abstain.ToString("N0");
+                    label8.Text = invalidBallot.ToString("N0");
+                    label7.Text = adjustedApprove.ToString("N0");
+                    label9.Text = totalVotesSum.ToString("N0");
+
+                    label10.Text = CalculatePercentage(disapprove, qShareTotal);
+                    label11.Text = CalculatePercentage(abstain, qShareTotal);
+                    label12.Text = CalculatePercentage(invalidBallot, qShareTotal);
+                    label18.Text = CalculatePercentage(adjustedApprove, qShareTotal);
+                    
+                    double totalPercentage = ParsePercentage(label18.Text) + ParsePercentage(label10.Text) + 
+                                           ParsePercentage(label12.Text) + ParsePercentage(label11.Text);
+                    label13.Text = $"{totalPercentage:F2}%";
                 }
-
-                label6.Text = disapprove.ToString("N0");
-                label5.Text = abstain.ToString("N0");
-                label8.Text = invalidBallot.ToString("N0");
-                label7.Text = adjustedApprove.ToString("N0");
-                label9.Text = totalVotesSum.ToString("N0");
-
-                label10.Text = CalculatePercentage(disapprove, qShareTotal);
-                label12.Text = CalculatePercentage(invalidBallot, qShareTotal);
-                label18.Text = CalculatePercentage(adjustedApprove, qShareTotal);
-
-                double totalPercentage = ParsePercentage(label18.Text) + ParsePercentage(label10.Text) + ParsePercentage(label12.Text) + (label11.Text == "-" ? 0 : ParsePercentage(label11.Text));
-                label13.Text = $"{totalPercentage:F2}%";
             }
             catch (Exception ex)
             {
@@ -247,6 +283,7 @@ namespace AgendaDetail
             {
                 text = text.Substring(0, text.Length - 1);
             }
+            text = text.Replace(",", ""); // เอา comma ออก
             if (double.TryParse(text, out double result))
             {
                 return (long)result;
@@ -277,6 +314,9 @@ namespace AgendaDetail
         {
             if (dtHeaders == null || dtHeaders.Rows.Count == 0)
             {
+                // หยุด Timer ก่อนปิดฟอร์ม
+                refreshTimer?.Stop();
+                
                 // Navigate to RegisterationDetail page
                 this.Hide();
                 RegisterationDetail regDetail = new RegisterationDetail();
@@ -287,11 +327,14 @@ namespace AgendaDetail
             if (currentAgendaIndex > 0)
             {
                 currentAgendaIndex--;
-                // รีเฟรชข้อมูลเมื่อเปลี่ยนหน้า
-                RefreshCurrentPage();
+                lastAgendaType = -1; // รีเซ็ตเพื่อบังคับให้ปรับตำแหน่งใหม่
+                UpdateAgendaDisplay();
             }
             else
             {
+                // หยุด Timer ก่อนปิดฟอร์ม
+                refreshTimer?.Stop();
+                
                 // Navigate to RegisterationDetail page
                 this.Hide();
                 RegisterationDetail regDetail = new RegisterationDetail();
@@ -307,8 +350,8 @@ namespace AgendaDetail
             if (currentAgendaIndex < dtHeaders.Rows.Count - 1)
             {
                 currentAgendaIndex++;
-                // รีเฟรชข้อมูลเมื่อเปลี่ยนหน้า
-                RefreshCurrentPage();
+                lastAgendaType = -1; // รีเซ็ตเพื่อบังคับให้ปรับตำแหน่งใหม่
+                UpdateAgendaDisplay();
             }
             else
             {
@@ -327,7 +370,7 @@ namespace AgendaDetail
                 // โหลดจำนวนคนรวมใหม่
                 LoadPeopleCountTotal();
                 
-                // อัพเดทการแสดงผลวาระ
+                // อัพเดทการแสดงผลวาระ (ไม่รีเซ็ต lastAgendaType เพื่อไม่ให้สลับซ้ำ)
                 UpdateAgendaDisplay();
             }
             catch (Exception ex)
@@ -353,13 +396,20 @@ namespace AgendaDetail
             // อัปเดต label ที่เกี่ยวข้อง
             label15.Text = qShareTotal.ToString("N0");
             label17.Text = peopleCountTotal.ToString();
-            label7.Text = qShareTotal.ToString("N0");
 
-            // ปรับตำแหน่ง label ตาม AgendaType
+            // ปรับตำแหน่ง label ตาม AgendaType (จะทำงานต่อเมื่อ AgendaType เปลี่ยน)
             AdjustControlsForAgendaType(agendaType);
 
             // เรียกคำนวณและแสดงผลคะแนน (ใช้ฟังก์ชันเดิม)
             CalculateAndDisplayVoteSummary();
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            // หยุด Timer เมื่อปิดฟอร์ม
+            refreshTimer?.Stop();
+            refreshTimer?.Dispose();
+            base.OnFormClosed(e);
         }
     }
 }

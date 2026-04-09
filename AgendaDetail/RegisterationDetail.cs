@@ -18,9 +18,23 @@ namespace AgendaDetail
 {
     public partial class RegisterationDetail : Form
     {
+        private System.Windows.Forms.Timer refreshTimer; // Timer สำหรับ auto-refresh
+
         public RegisterationDetail()
         {
             InitializeComponent();
+            
+            // ตั้งค่า Timer สำหรับ auto-refresh ทุก 3 วินาที
+            refreshTimer = new System.Windows.Forms.Timer();
+            refreshTimer.Interval = 3000; // 3000 milliseconds = 3 วินาที
+            refreshTimer.Tick += RefreshTimer_Tick;
+            refreshTimer.Start();
+        }
+
+        private void RefreshTimer_Tick(object sender, EventArgs e)
+        {
+            // เรียก method RefreshCurrentPage ทุกๆ 3 วินาที
+            RefreshCurrentPage();
         }
 
         private void RegisterationDetail_Load(object sender, EventArgs e)
@@ -186,10 +200,21 @@ namespace AgendaDetail
             // รีเฟรชก่อนเปลี่ยนหน้า
             RefreshCurrentPage();
 
+            // หยุด Timer ก่อนไปหน้าใหม่
+            refreshTimer?.Stop();
+
             // ไปหน้า AgendaDetail
             this.Hide();
             AgendaDetail agendaDetail = new AgendaDetail();
             agendaDetail.Show();
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            // หยุด Timer เมื่อปิดฟอร์ม
+            refreshTimer?.Stop();
+            refreshTimer?.Dispose();
+            base.OnFormClosed(e);
         }
     }
 }
