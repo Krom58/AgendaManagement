@@ -30,6 +30,8 @@ namespace AgendaDetail
             refreshTimer.Interval = 3000; // 3000 milliseconds = 3 วินาที
             refreshTimer.Tick += RefreshTimer_Tick;
             refreshTimer.Start();
+            
+            System.Diagnostics.Debug.WriteLine("[Timer] Auto-refresh started (every 3 seconds)");
         }
 
         private void RefreshTimer_Tick(object sender, EventArgs e)
@@ -140,6 +142,10 @@ namespace AgendaDetail
                 
                 // สลับตำแหน่ง label หัวข้อ
                 SwapLabels(label23, label21); // หัวข้อ "งดออกเสียง" <-> หัวข้อ "รวม"
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[AdjustControls] Reset to AgendaType 2 layout");
             }
 
             // บันทึก AgendaType ปัจจุบัน
@@ -333,6 +339,7 @@ namespace AgendaDetail
             {
                 // หยุด Timer ก่อนปิดฟอร์ม
                 refreshTimer?.Stop();
+                System.Diagnostics.Debug.WriteLine("[Timer] Stopped before navigation");
                 
                 // Navigate to RegisterationDetail page
                 this.Hide();
@@ -346,11 +353,13 @@ namespace AgendaDetail
                 currentAgendaIndex--;
                 lastAgendaType = -1; // รีเซ็ตเพื่อบังคับให้ปรับตำแหน่งใหม่
                 UpdateAgendaDisplay();
+                System.Diagnostics.Debug.WriteLine($"[Navigation] Back to agenda {currentAgendaIndex + 1}");
             }
             else
             {
                 // หยุด Timer ก่อนปิดฟอร์ม
                 refreshTimer?.Stop();
+                System.Diagnostics.Debug.WriteLine("[Timer] Stopped before navigation");
                 
                 // Navigate to RegisterationDetail page
                 this.Hide();
@@ -369,6 +378,7 @@ namespace AgendaDetail
                 currentAgendaIndex++;
                 lastAgendaType = -1; // รีเซ็ตเพื่อบังคับให้ปรับตำแหน่งใหม่
                 UpdateAgendaDisplay();
+                System.Diagnostics.Debug.WriteLine($"[Navigation] Forward to agenda {currentAgendaIndex + 1}");
             }
             else
             {
@@ -376,7 +386,7 @@ namespace AgendaDetail
             }
         }
 
-        // เพิ่ม method สำหรับรีเฟรชหน้าปัจจุบัน
+        // เพิ่ม method สำหรับรีเฟรชหน้าปัจจุบัน (ปรับปรุงแล้ว)
         private void RefreshCurrentPage()
         {
             try
@@ -416,7 +426,8 @@ namespace AgendaDetail
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error refreshing page: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[Refresh] Error: {ex.Message}");
+                // ไม่แสดง MessageBox เพื่อไม่ให้รบกวนผู้ใช้ทุก 3 วินาที
             }
         }
 
@@ -424,6 +435,10 @@ namespace AgendaDetail
         {
             if (dtHeaders == null || dtHeaders.Rows.Count == 0)
                 return;
+                
+            if (currentAgendaIndex >= dtHeaders.Rows.Count)
+                return;
+                
             DataRow currentRow = dtHeaders.Rows[currentAgendaIndex];
 
             // นำ AgendaDisplay ไปแสดงใน HeaderLabel
@@ -450,6 +465,7 @@ namespace AgendaDetail
             // หยุด Timer เมื่อปิดฟอร์ม
             refreshTimer?.Stop();
             refreshTimer?.Dispose();
+            System.Diagnostics.Debug.WriteLine("[Timer] Stopped and disposed");
             base.OnFormClosed(e);
         }
     }
