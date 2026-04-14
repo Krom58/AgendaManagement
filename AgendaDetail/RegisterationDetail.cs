@@ -46,7 +46,11 @@ namespace AgendaDetail
         {
             try
             {
+                // โหลดข้อมูลใหม่ทั้งหมด
                 LoadRegistrationData();
+                
+                // เพิ่ม Debug log เพื่อยืนยันว่ามีการ refresh
+                System.Diagnostics.Debug.WriteLine($"RegisterationDetail refreshed at {DateTime.Now:HH:mm:ss}");
             }
             catch (Exception ex)
             {
@@ -161,38 +165,51 @@ namespace AgendaDetail
                     }
                 }
 
-                // --- อัปเดต UI ---
-                label7.Text = peopleCountSelf.ToString();
-                label8.Text = peopleCountProxy.ToString();
-                label9.Text = shareCountSelf.ToString("N0");
-                label10.Text = shareCountProxy.ToString("N0");
-                label13.Text = (peopleCountSelf + peopleCountProxy).ToString();
-                label14.Text = (shareCountSelf + shareCountProxy).ToString("N0");
-                label17.Text = totalShares.ToString("N0");
-
-                // คำนวณเปอร์เซ็นต์
-                double percentSelf = totalShares > 0 ? (double)shareCountSelf / totalShares * 100 : 0;
-                double percentProxy = totalShares > 0 ? (double)shareCountProxy / totalShares * 100 : 0;
-                double percentTotal = percentSelf + percentProxy;
-
-                label11.Text = $"{percentSelf:F2}%";
-                label12.Text = $"{percentProxy:F2}%";
-                label15.Text = $"{percentTotal:F2}%";
-
-                double qShareTotalValue = double.Parse(label14.Text, System.Globalization.NumberStyles.AllowThousands);
-                double qShareGlobal = double.Parse(label17.Text, System.Globalization.NumberStyles.AllowThousands);
-                double percentQShare = qShareGlobal > 0 ? (qShareTotalValue / qShareGlobal) * 100 : 0;
-                label18.Text = $"{percentQShare:F2}%";
-
-                double percentDifference = percentTotal - percentQShare;
-                label19.Text = $"{percentDifference:F2}%";
-
-                Debug.WriteLine($"Percentages - Self: {percentSelf}%, Proxy: {percentProxy}%, Total: {percentTotal}%");
+                // --- อัปเดต UI บน UI Thread (ป้องกัน Cross-thread exception) ---
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(new Action(() => UpdateUI(peopleCountSelf, peopleCountProxy, shareCountSelf, shareCountProxy, totalShares)));
+                }
+                else
+                {
+                    UpdateUI(peopleCountSelf, peopleCountProxy, shareCountSelf, shareCountProxy, totalShares);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error loading registration data: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Error loading registration data: {ex.Message}");
             }
+        }
+
+        private void UpdateUI(int peopleCountSelf, int peopleCountProxy, long shareCountSelf, long shareCountProxy, long totalShares)
+        {
+            // --- อัปเดต UI ---
+            label7.Text = peopleCountSelf.ToString();
+            label8.Text = peopleCountProxy.ToString();
+            label9.Text = shareCountSelf.ToString("N0");
+            label10.Text = shareCountProxy.ToString("N0");
+            label13.Text = (peopleCountSelf + peopleCountProxy).ToString();
+            label14.Text = (shareCountSelf + shareCountProxy).ToString("N0");
+            label17.Text = totalShares.ToString("N0");
+
+            // คำนวณเปอร์เซ็นต์
+            double percentSelf = totalShares > 0 ? (double)shareCountSelf / totalShares * 100 : 0;
+            double percentProxy = totalShares > 0 ? (double)shareCountProxy / totalShares * 100 : 0;
+            double percentTotal = percentSelf + percentProxy;
+
+            label11.Text = $"{percentSelf:F2}%";
+            label12.Text = $"{percentProxy:F2}%";
+            label15.Text = $"{percentTotal:F2}%";
+
+            double qShareTotalValue = double.Parse(label14.Text, System.Globalization.NumberStyles.AllowThousands);
+            double qShareGlobal = double.Parse(label17.Text, System.Globalization.NumberStyles.AllowThousands);
+            double percentQShare = qShareGlobal > 0 ? (qShareTotalValue / qShareGlobal) * 100 : 0;
+            label18.Text = $"{percentQShare:F2}%";
+
+            double percentDifference = percentTotal - percentQShare;
+            label19.Text = $"{percentDifference:F2}%";
+
+            Debug.WriteLine($"UI Updated - Self: {peopleCountSelf}, Proxy: {peopleCountProxy}, Total Shares: {totalShares}");
         }
 
         private void btnNext_Click(object sender, EventArgs e)

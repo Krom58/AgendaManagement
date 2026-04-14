@@ -81,7 +81,7 @@ namespace AgendaDetail
             }
             catch (Exception ex)
             {
-                MessageBox.Show("เกิดข้อผิดพลาด: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Error loading people count: {ex.Message}");
             }
         }
 
@@ -107,17 +107,18 @@ namespace AgendaDetail
                         using (DbDataAdapter adapter = DbProviderFactories.GetFactory(conn).CreateDataAdapter())
                         {
                             adapter.SelectCommand = cmd;
-                            dtHeaders = new DataTable();
-                            adapter.Fill(dtHeaders);
+                            DataTable newHeaders = new DataTable();
+                            adapter.Fill(newHeaders);
                             // เพิ่มคอลัมน์ AgendaDisplay
-                            dtHeaders.Columns.Add("AgendaDisplay", typeof(string), "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
+                            newHeaders.Columns.Add("AgendaDisplay", typeof(string), "'วาระที่ ' + AgendaNumber + ' - ' + AgendaTitle");
+                            dtHeaders = newHeaders;
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("เกิดข้อผิดพลาดในการโหลดข้อมูลวาระ: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Error loading header data: {ex.Message}");
             }
         }
 
@@ -130,7 +131,7 @@ namespace AgendaDetail
             // รีเซ็ตตำแหน่งก่อนเสมอ
             ResetLabelsToDefault();
 
-            // ถ้า AgendaType = 1 ให้สลับตำแหน่ง
+            // ถ้า AgendaType = 1 ให้สลับตำแหน่ง (ไม่รวมงดออกเสียง)
             if (agendaType == 1)
             {
                 // สลับตำแหน่ง label ที่แสดงค่า
@@ -139,9 +140,6 @@ namespace AgendaDetail
                 
                 // สลับตำแหน่ง label หัวข้อ
                 SwapLabels(label23, label21); // หัวข้อ "งดออกเสียง" <-> หัวข้อ "รวม"
-                
-                // ซ่อนเปอร์เซ็นต์งดออกเสียงสำหรับ AgendaType 1
-                label11.Text = "-";
             }
 
             // บันทึก AgendaType ปัจจุบัน
@@ -171,11 +169,10 @@ namespace AgendaDetail
 
         private void CalculateAndDisplayVoteSummary()
         {
-            string agendaItem = HeaderLabel.Text; // ใช้ TextBox1 เป็นหัวข้อวาระ
+            string agendaItem = HeaderLabel.Text; // ใช้ HeaderLabel เป็นหัวข้อวาระ
             if (string.IsNullOrEmpty(agendaItem))
             {
-                MessageBox.Show("กรุณาเลือกวาระ");
-                return;
+                return; // ไม่แสดง MessageBox เพื่อไม่รบกวนการรีเฟรช
             }
 
             long disapprove = 0, abstain = 0, invalidBallot = 0, totalVotes = 0;
@@ -183,11 +180,11 @@ namespace AgendaDetail
 
             try
             {
-                // 1) สร้าง DBConfig instance (ปรับ path ให้ถูกต้อง)
+                // 1) สร้าง DBConfig instance
                 var iniPath = Path.Combine(Application.StartupPath, "database_config.ini");
                 var dbcfg = new DBConfigDetail(iniPath);
 
-                // 2) ใช้ DbConnection แทน SqlConnection เพื่อรองรับฐานข้อมูลหลายประเภท
+                // 2) ใช้ DbConnection เพื่อรองรับฐานข้อมูลหลายประเภท
                 using (var conn = dbcfg.CreateConnection())
                 {
                     conn.Open();
@@ -229,38 +226,50 @@ namespace AgendaDetail
                     }
                 }
 
+                // ตรวจสอบ AgendaType
+                int currentAgendaType = dtHeaders != null && dtHeaders.Rows.Count > currentAgendaIndex 
+                    ? Convert.ToInt32(dtHeaders.Rows[currentAgendaIndex]["AgendaType"]) 
+                    : 2; // Default เป็น Type 2
+
                 long adjustedApprove;
                 long totalVotesSum;
-                // ถ้า AgendaType = 1 (แบบที่ไม่รวมงดออกเสียงในการคำนวณ)
-                if (dtHeaders.Rows[currentAgendaIndex]["AgendaType"].ToString() == "1")
+
+                // *** AgendaType = 1 → ไม่รวมงดออกเสียง ***
+                if (currentAgendaType == 1)
                 {
+                    // คำนวณแบบไม่รวมงดออกเสียง
                     adjustedApprove = qShareTotal - (disapprove + invalidBallot);
                     totalVotesSum = adjustedApprove + disapprove + invalidBallot;
                     
-                    // ตั้งค่า label ตามตำแหน่งปัจจุบัน (หลังการสลับแล้ว)
-                    label6.Text = disapprove.ToString("N0");
-                    label5.Text = totalVotesSum.ToString("N0");  // label5 จะอยู่ที่ตำแหน่ง "รวม" หลังสลับ
-                    label8.Text = invalidBallot.ToString("N0");
-                    label7.Text = adjustedApprove.ToString("N0");
-                    label9.Text = abstain.ToString("N0");        // label9 จะอยู่ที่ตำแหน่ง "งดออกเสียง" หลังสลับ
+                    // ใส่ค่าลง label (label ถูกสลับแล้วโดย AdjustControlsForAgendaType)
+                    label6.Text = disapprove.ToString("N0");        // ไม่เห็นด้วย
+                    label8.Text = invalidBallot.ToString("N0");     // บัตรเสีย
+                    label7.Text = adjustedApprove.ToString("N0");   // เห็นด้วย
+                    label5.Text = abstain.ToString("N0");           // งดออกเสียง (สลับมาที่แถว "รวม")
+                    label9.Text = totalVotesSum.ToString("N0");     // รวม (สลับมาที่แถว "งดออกเสียง")
                     
+                    // เปอร์เซ็นต์
                     label10.Text = CalculatePercentage(disapprove, qShareTotal);
-                    label11.Text = "-";                          // label11 จะอยู่ที่ตำแหน่ง "% รวม" หลังสลับ (แสดง -)
                     label12.Text = CalculatePercentage(invalidBallot, qShareTotal);
                     label18.Text = CalculatePercentage(adjustedApprove, qShareTotal);
-                    label13.Text = CalculatePercentage(abstain, qShareTotal); // label13 จะอยู่ที่ตำแหน่ง "% งดออกเสียง" หลังสลับ
+                    label11.Text = CalculatePercentage(abstain, qShareTotal);  // % งดออกเสียง (สลับมาที่แถว "รวม")
+                    label13.Text = "-";  // % รวม (สลับมาที่แถว "งดออกเสียง") แสดง "-"
                 }
-                else // AgendaType = 2 (แบบปกติ รวมงดออกเสียง)
+                // *** AgendaType = 2 → รวมงดออกเสียง ***
+                else
                 {
+                    // คำนวณแบบรวมงดออกเสียง
                     adjustedApprove = qShareTotal - (disapprove + abstain + invalidBallot);
                     totalVotesSum = adjustedApprove + disapprove + invalidBallot + abstain;
                     
-                    label6.Text = disapprove.ToString("N0");
-                    label5.Text = abstain.ToString("N0");
-                    label8.Text = invalidBallot.ToString("N0");
-                    label7.Text = adjustedApprove.ToString("N0");
-                    label9.Text = totalVotesSum.ToString("N0");
+                    // ใส่ค่าลง label (ตำแหน่งปกติ)
+                    label6.Text = disapprove.ToString("N0");        // ไม่เห็นด้วย
+                    label5.Text = abstain.ToString("N0");           // งดออกเสียง
+                    label8.Text = invalidBallot.ToString("N0");     // บัตรเสีย
+                    label7.Text = adjustedApprove.ToString("N0");   // เห็นด้วย
+                    label9.Text = totalVotesSum.ToString("N0");     // รวม
 
+                    // เปอร์เซ็นต์
                     label10.Text = CalculatePercentage(disapprove, qShareTotal);
                     label11.Text = CalculatePercentage(abstain, qShareTotal);
                     label12.Text = CalculatePercentage(invalidBallot, qShareTotal);
@@ -270,15 +279,20 @@ namespace AgendaDetail
                                            ParsePercentage(label12.Text) + ParsePercentage(label11.Text);
                     label13.Text = $"{totalPercentage:F2}%";
                 }
+
+                System.Diagnostics.Debug.WriteLine($"AgendaType: {currentAgendaType}, Approve: {adjustedApprove}, Disapprove: {disapprove}, Abstain: {abstain}, Invalid: {invalidBallot}, Total: {totalVotesSum}");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("เกิดข้อผิดพลาดขณะคำนวณคะแนน: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Error calculating votes: {ex.Message}");
             }
         }
 
         private long ParseLabelToLong(string text)
         {
+            if (string.IsNullOrEmpty(text))
+                return 0;
+                
             if (text.EndsWith("%"))
             {
                 text = text.Substring(0, text.Length - 1);
@@ -299,6 +313,9 @@ namespace AgendaDetail
 
         private double ParsePercentage(string text)
         {
+            if (string.IsNullOrEmpty(text))
+                return 0;
+                
             if (text.EndsWith("%"))
             {
                 text = text.Substring(0, text.Length - 1);
@@ -370,8 +387,32 @@ namespace AgendaDetail
                 // โหลดจำนวนคนรวมใหม่
                 LoadPeopleCountTotal();
                 
-                // อัพเดทการแสดงผลวาระ (ไม่รีเซ็ต lastAgendaType เพื่อไม่ให้สลับซ้ำ)
-                UpdateAgendaDisplay();
+                // ตรวจสอบว่ายังมีข้อมูลวาระหรือไม่
+                if (dtHeaders != null && dtHeaders.Rows.Count > currentAgendaIndex)
+                {
+                    DataRow currentRow = dtHeaders.Rows[currentAgendaIndex];
+                    
+                    // อัพเดทข้อมูลพื้นฐาน
+                    HeaderLabel.Text = currentRow["AgendaDisplay"].ToString();
+                    
+                    int agendaType = Convert.ToInt32(currentRow["AgendaType"]);
+                    long qShareTotal = currentRow["qShareTotal"] == DBNull.Value ? 0 : Convert.ToInt64(currentRow["qShareTotal"]);
+                    int peopleCountTotal = currentRow["peopleCountTotal"] == DBNull.Value ? 0 : Convert.ToInt32(currentRow["peopleCountTotal"]);
+                    
+                    // อัปเดต label ที่เกี่ยวข้อง
+                    label15.Text = qShareTotal.ToString("N0");
+                    label17.Text = peopleCountTotal.ToString();
+                    
+                    // *** สำคัญ: ไม่ต้อง reset lastAgendaType เพื่อไม่ให้สลับซ้ำ ***
+                    // เรียก AdjustControlsForAgendaType โดยไม่ reset
+                    // มันจะสลับก็ต่อเมื่อ AgendaType เปลี่ยนจริงๆ เท่านั้น
+                    AdjustControlsForAgendaType(agendaType);
+                    
+                    // เรียกคำนวณและแสดงผลคะแนนใหม่
+                    CalculateAndDisplayVoteSummary();
+                    
+                    System.Diagnostics.Debug.WriteLine($"Page refreshed at {DateTime.Now:HH:mm:ss} - Agenda: {HeaderLabel.Text}, Type: {agendaType}");
+                }
             }
             catch (Exception ex)
             {
@@ -385,7 +426,7 @@ namespace AgendaDetail
                 return;
             DataRow currentRow = dtHeaders.Rows[currentAgendaIndex];
 
-            // นำ AgendaDisplay ไปแสดงใน TextBox1
+            // นำ AgendaDisplay ไปแสดงใน HeaderLabel
             HeaderLabel.Text = currentRow["AgendaDisplay"].ToString();
 
             // อ่านค่า AgendaType, qShareTotal และ peopleCountTotal จาก DataRow
@@ -397,10 +438,10 @@ namespace AgendaDetail
             label15.Text = qShareTotal.ToString("N0");
             label17.Text = peopleCountTotal.ToString();
 
-            // ปรับตำแหน่ง label ตาม AgendaType (จะทำงานต่อเมื่อ AgendaType เปลี่ยน)
+            // ปรับตำแหน่ง label ตาม AgendaType
             AdjustControlsForAgendaType(agendaType);
 
-            // เรียกคำนวณและแสดงผลคะแนน (ใช้ฟังก์ชันเดิม)
+            // เรียกคำนวณและแสดงผลคะแนน
             CalculateAndDisplayVoteSummary();
         }
 
